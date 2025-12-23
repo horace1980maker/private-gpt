@@ -1,6 +1,7 @@
 """FastAPI app creation, logger configuration and main API routes."""
 
 import logging
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,8 +55,23 @@ def create_app(root_injector: Injector) -> FastAPI:
             allow_headers=settings.server.cors.allow_headers,
         )
 
-    if settings.ui.enabled:
-        logger.debug("Importing the UI module")
+    # Custom static frontend (HTML/JS) - takes priority if frontend folder exists
+    frontend_path = Path(__file__).parent.parent / "frontend"
+    if frontend_path.exists() and settings.ui.enabled:
+        from fastapi.staticfiles import StaticFiles
+        from fastapi.responses import FileResponse
+        
+        logger.info("Mounting custom HTML/JS frontend from %s", frontend_path)
+        
+        # Serve static files
+        app.mount("/static", StaticFiles(directory=str(frontend_path)), name="static")
+        
+        # Serve index.html at root
+        @app.get("/")
+        async def serve_frontend():
+            return FileResponse(str(frontend_path / "index.html"))
+    elif settings.ui.enabled:
+        logger.debug("Importing the Gradio UI module")
         try:
             from private_gpt.ui.ui import PrivateGptUi
         except ImportError as e:

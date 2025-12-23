@@ -36,6 +36,42 @@ UI_TAB_TITLE = "My Private GPT"
 
 SOURCES_SEPARATOR = "<hr>Sources: \n"
 
+# UI Translations for bilingual support
+UI_TRANSLATIONS = {
+    "en": {
+        "mode": "Mode",
+        "language": "Language",
+        "upload_files": "Upload File(s)",
+        "ingested_files": "Ingested Files",
+        "deselect_file": "De-select selected file",
+        "selected_for": "Selected for Query or Deletion",
+        "delete_selected": "🗑️ Delete selected file",
+        "delete_all": "⚠️ Delete ALL files",
+        "system_prompt": "System Prompt",
+        "all_files": "All files",
+        "rag_explanation": "Get contextualized answers from selected files.",
+        "search_explanation": "Find relevant chunks of text in selected files.",
+        "basic_explanation": "Chat with the LLM using its training data. Files are ignored.",
+        "summarize_explanation": "Generate a summary of the selected files. Prompt to customize the result.",
+    },
+    "es": {
+        "mode": "Modo",
+        "language": "Idioma",
+        "upload_files": "Subir Archivo(s)",
+        "ingested_files": "Archivos Cargados",
+        "deselect_file": "Deseleccionar archivo",
+        "selected_for": "Seleccionado para Consulta o Eliminación",
+        "delete_selected": "🗑️ Eliminar archivo seleccionado",
+        "delete_all": "⚠️ Eliminar TODOS los archivos",
+        "system_prompt": "Prompt del Sistema",
+        "all_files": "Todos los archivos",
+        "rag_explanation": "Obtén respuestas contextualizadas de los archivos seleccionados.",
+        "search_explanation": "Encuentra fragmentos relevantes de texto en los archivos.",
+        "basic_explanation": "Chatea con el LLM usando sus datos de entrenamiento. Los archivos se ignoran.",
+        "summarize_explanation": "Genera un resumen de los archivos seleccionados. Usa el prompt para personalizar.",
+    }
+}
+
 
 class Modes(str, Enum):
     RAG_MODE = "RAG"
@@ -105,6 +141,9 @@ class PrivateGptUi:
             settings().ui.default_mode, Modes.RAG_MODE
         )
         self._system_prompt = self._get_default_system_prompt(self._default_mode)
+        
+        # Language setting for UI (default: English)
+        self._ui_language = "en"
 
     def _chat(
         self, message: str, history: list[list[str]], mode: Modes, *_: Any
@@ -252,19 +291,29 @@ class PrivateGptUi:
                 p = ""
         return p
 
-    @staticmethod
-    def _get_default_mode_explanation(mode: Modes) -> str:
+    def _get_default_mode_explanation(self, mode: Modes) -> str:
+        lang = getattr(self, '_ui_language', 'en')
+        translations = UI_TRANSLATIONS.get(lang, UI_TRANSLATIONS["en"])
         match mode:
             case Modes.RAG_MODE:
-                return "Get contextualized answers from selected files."
+                return translations["rag_explanation"]
             case Modes.SEARCH_MODE:
-                return "Find relevant chunks of text in selected files."
+                return translations["search_explanation"]
             case Modes.BASIC_CHAT_MODE:
-                return "Chat with the LLM using its training data. Files are ignored."
+                return translations["basic_explanation"]
             case Modes.SUMMARIZE_MODE:
-                return "Generate a summary of the selected files. Prompt to customize the result."
+                return translations["summarize_explanation"]
             case _:
                 return ""
+
+    def _set_language(self, language: str) -> Any:
+        """Set UI language and update all translated components."""
+        self._ui_language = language
+        translations = UI_TRANSLATIONS.get(language, UI_TRANSLATIONS["en"])
+        return [
+            gr.update(label=translations["mode"]),
+            gr.update(value=self._get_default_mode_explanation(self.mode if hasattr(self, 'mode') else self._default_mode)),
+        ]
 
     def _set_system_prompt(self, system_prompt_input: str) -> None:
         logger.info(f"Setting system prompt to: {system_prompt_input}")
@@ -400,11 +449,23 @@ class PrivateGptUi:
                         label="Mode",
                         value=default_mode,
                     )
+                    # Language toggle for bilingual support
+                    language_toggle = gr.Radio(
+                        ["en", "es"],
+                        label="Language / Idioma",
+                        value="en",
+                    )
                     explanation_mode = gr.Textbox(
                         placeholder=self._get_default_mode_explanation(default_mode),
                         show_label=False,
                         max_lines=3,
                         interactive=False,
+                    )
+                    # Wire language toggle to update UI labels
+                    language_toggle.change(
+                        self._set_language,
+                        inputs=language_toggle,
+                        outputs=[mode, explanation_mode],
                     )
                     upload_button = gr.components.UploadButton(
                         "Upload File(s)",

@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrivateGPT | MEAL Expert</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5', 100: '#d1fae5', 500: '#10b981',
+                            600: '#059669', 700: '#047857', 900: '#064e3b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+
+        .chat-container {
+            height: calc(100vh - 140px);
+            min-height: 500px;
+        }
+
+        .typing-dot {
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0)
+            }
+
+            40% {
+                transform: scale(1)
+            }
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.3s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass-nav border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-14">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-lg">
+                        🔒</div>
+                    <span class="font-display font-bold text-lg text-slate-900" data-i18n="brandName">PrivateGPT</span>
+                    <span id="model-badge"
+                        class="ml-2 px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full font-medium">Ollama:
+                        llama3.2</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="lang-toggle"
+                        class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-colors">
+                        🌐 <span id="lang-label">EN</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-16 pb-4 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 chat-container">
+
+                <!-- Sidebar -->
+                <aside class="lg:col-span-1 space-y-4 overflow-y-auto">
+
+                    <!-- Mode Selector -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                            data-i18n="lblMode">Mode</label>
+                        <div class="space-y-1.5" id="mode-selector">
+                            <button
+                                class="mode-btn active w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all bg-brand-50 text-brand-700 border border-brand-200"
+                                data-mode="rag">
+                                📚 RAG <span class="text-xs text-slate-400" data-i18n="modeRagDesc">Context from
+                                    files</span>
+                            </button>
+                            <button
+                                class="mode-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50"
+                                data-mode="search">
+                                🔍 Search <span class="text-xs text-slate-400" data-i18n="modeSearchDesc">Find
+                                    chunks</span>
+                            </button>
+                            <button
+                                class="mode-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50"
+                                data-mode="basic">
+                                💬 Basic <span class="text-xs text-slate-400" data-i18n="modeBasicDesc">No
+                                    context</span>
+                            </button>
+                            <button
+                                class="mode-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50"
+                                data-mode="summarize">
+                                📝 Summarize <span class="text-xs text-slate-400" data-i18n="modeSumDesc">Summarize
+                                    files</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                            data-i18n="lblUpload">Upload Documents</label>
+                        <div id="upload-zone"
+                            class="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center cursor-pointer hover:border-brand-400 hover:bg-brand-50/50 transition-all">
+                            <input type="file" id="file-input" class="hidden" multiple
+                                accept=".pdf,.docx,.txt,.md,.csv,.html,.epub">
+                            <span class="text-2xl">📁</span>
+                            <p class="text-xs text-slate-500 mt-1" data-i18n="uploadHint">Drop files or click</p>
+                        </div>
+                    </div>
+
+                    <!-- Ingested Files -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex-1 flex flex-col min-h-0">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider"
+                                data-i18n="lblFiles">Ingested Files</label>
+                            <span id="file-count" class="text-xs text-slate-400">0</span>
+                        </div>
+                        <ul id="files-list" class="space-y-1 overflow-y-auto flex-1 max-h-40 text-sm">
+                            <li class="text-slate-400 text-xs" data-i18n="noFiles">No files uploaded</li>
+                        </ul>
+                        <div class="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+                            <button id="delete-selected-btn"
+                                class="flex-1 px-2 py-1.5 text-xs bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-500 rounded-lg transition-colors disabled:opacity-50"
+                                disabled data-i18n="btnDeleteSel">🗑️ Delete Selected</button>
+                            <button id="delete-all-btn"
+                                class="flex-1 px-2 py-1.5 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                                data-i18n="btnDeleteAll">⚠️ Delete All</button>
+                        </div>
+                    </div>
+
+                    <!-- System Prompt -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                            data-i18n="lblPrompt">System Prompt</label>
+                        <textarea id="system-prompt" rows="3"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                            placeholder="Optional system instructions..."></textarea>
+                    </div>
+                </aside>
+
+                <!-- Chat Interface -->
+                <div
+                    class="lg:col-span-3 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+
+                    <!-- Chat Header -->
+                    <div class="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                        <div>
+                            <h2 class="font-display font-bold text-base text-slate-900" data-i18n="chatTitle">Chat with
+                                your MEAL Copilot</h2>
+                            <p class="text-xs text-slate-500" id="chat-subtitle" data-i18n="chatSub">Mode: RAG | Using
+                                all files</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="clear-chat-btn"
+                                class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium transition-colors"
+                                data-i18n="btnClear">Clear Chat</button>
+                            <span
+                                class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-semibold">
+                                <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+                                Online
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Messages -->
+                    <div id="chat-messages" class="chat-messages flex-1 overflow-y-auto p-5 space-y-3">
+                        <!-- Welcome message -->
+                        <div class="flex justify-start fade-in-up">
+                            <div
+                                class="max-w-[85%] bg-slate-100 text-slate-800 px-4 py-3 rounded-2xl rounded-bl-sm text-sm leading-relaxed">
+                                <span data-i18n="welcome">Hello! I'm your private MEAL Expert. Upload documents and ask
+                                    questions, or use Basic mode to chat without context.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading Indicator -->
+                    <div id="loading-indicator" class="hidden px-5 pb-3">
+                        <div class="inline-flex items-center gap-1 px-3 py-2 bg-slate-100 rounded-xl rounded-bl-sm">
+                            <div class="typing-dot w-2 h-2 bg-slate-400 rounded-full"></div>
+                            <div class="typing-dot w-2 h-2 bg-slate-400 rounded-full"></div>
+                            <div class="typing-dot w-2 h-2 bg-slate-400 rounded-full"></div>
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="p-4 border-t border-slate-100 bg-white">
+                        <form id="chat-form" class="flex gap-2">
+                            <input type="text" id="user-input"
+                                class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                                placeholder="Ask a question..." data-i18n-placeholder="inputPlaceholder"
+                                autocomplete="off">
+                            <button type="submit" id="send-btn"
+                                class="px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold transition-all shadow-lg shadow-brand-500/25 flex items-center gap-2">
+                                <span class="hidden sm:inline" data-i18n="sendBtn">Send</span>
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ===== CONFIG =====
+        const API_BASE = '';
+        let currentMode = 'rag';
+        let currentLang = 'en';
+        let chatHistory = [];
+        let selectedFile = null;
+        let ingestedFiles = [];
+
+        // ===== I18N =====
+        const i18n = {
+            en: {
+                brandName: "PrivateGPT",
+                lblMode: "Mode",
+                modeRagDesc: "Context from files",
+                modeSearchDesc: "Find chunks",
+                modeBasicDesc: "No context",
+                modeSumDesc: "Summarize files",
+                lblUpload: "Upload Documents",
+                uploadHint: "Drop files or click",
+                lblFiles: "Ingested Files",
+                noFiles: "No files uploaded",
+                btnDeleteSel: "🗑️ Delete Selected",
+                btnDeleteAll: "⚠️ Delete All",
+                lblPrompt: "System Prompt",
+                chatTitle: "Chat with your MEAL Copilot",
+                chatSub: "Mode: RAG | Using all files",
+                btnClear: "Clear Chat",
+                welcome: "Hello! I'm your private MEAL Expert. Upload documents and ask questions, or use Basic mode to chat without context.",
+                inputPlaceholder: "Ask a question...",
+                sendBtn: "Send",
+                errorMsg: "Error connecting. Please try again."
+            },
+            es: {
+                brandName: "PrivateGPT",
+                lblMode: "Modo",
+                modeRagDesc: "Contexto de archivos",
+                modeSearchDesc: "Buscar fragmentos",
+                modeBasicDesc: "Sin contexto",
+                modeSumDesc: "Resumir archivos",
+                lblUpload: "Subir Documentos",
+                uploadHint: "Arrastra o haz clic",
+                lblFiles: "Archivos Cargados",
+                noFiles: "Sin archivos",
+                btnDeleteSel: "🗑️ Eliminar Selec.",
+                btnDeleteAll: "⚠️ Eliminar Todo",
+                lblPrompt: "Prompt del Sistema",
+                chatTitle: "Chatea con tu Copiloto MEAL",
+                chatSub: "Modo: RAG | Usando todos los archivos",
+                btnClear: "Limpiar Chat",
+                welcome: "¡Hola! Soy tu experto MEAL privado. Sube documentos y haz preguntas, o usa el modo Básico para chatear sin contexto.",
+                inputPlaceholder: "Haz una pregunta...",
+                sendBtn: "Enviar",
+                errorMsg: "Error de conexión. Intenta de nuevo."
+            }
+        };
+
+        // ===== INIT =====
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFiles();
+            setupEventListeners();
+            renderUI();
+        });
+
+        function setupEventListeners() {
+            // Mode selector
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => setMode(btn.dataset.mode));
+            });
+
+            // Language toggle
+            document.getElementById('lang-toggle').addEventListener('click', toggleLanguage);
+
+            // File upload
+            const uploadZone = document.getElementById('upload-zone');
+            const fileInput = document.getElementById('file-input');
+            uploadZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileUpload);
+            uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('border-brand-400', 'bg-brand-50'); });
+            uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('border-brand-400', 'bg-brand-50'));
+            uploadZone.addEventListener('drop', handleFileDrop);
+
+            // Delete buttons
+            document.getElementById('delete-selected-btn').addEventListener('click', deleteSelected);
+            document.getElementById('delete-all-btn').addEventListener('click', deleteAll);
+
+            // Chat
+            document.getElementById('chat-form').addEventListener('submit', handleChat);
+            document.getElementById('clear-chat-btn').addEventListener('click', clearChat);
+        }
+
+        function renderUI() {
+            const t = i18n[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.textContent = t[key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (t[key]) el.placeholder = t[key];
+            });
+            document.getElementById('lang-label').textContent = currentLang.toUpperCase();
+            updateSubtitle();
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'es' : 'en';
+            renderUI();
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                if (btn.dataset.mode === mode) {
+                    btn.classList.add('active', 'bg-brand-50', 'text-brand-700', 'border', 'border-brand-200');
+                    btn.classList.remove('text-slate-600', 'hover:bg-slate-50');
+                } else {
+                    btn.classList.remove('active', 'bg-brand-50', 'text-brand-700', 'border', 'border-brand-200');
+                    btn.classList.add('text-slate-600', 'hover:bg-slate-50');
+                }
+            });
+            updateSubtitle();
+        }
+
+        function updateSubtitle() {
+            const modeNames = { rag: 'RAG', search: 'Search', basic: 'Basic', summarize: 'Summarize' };
+            const fileInfo = selectedFile ? selectedFile : (currentLang === 'en' ? 'all files' : 'todos los archivos');
+            const prefix = currentLang === 'en' ? 'Mode' : 'Modo';
+            const using = currentLang === 'en' ? 'Using' : 'Usando';
+            document.getElementById('chat-subtitle').textContent = `${prefix}: ${modeNames[currentMode]} | ${using}: ${fileInfo}`;
+        }
+
+        // ===== FILES =====
+        async function loadFiles() {
+            try {
+                const res = await fetch(`${API_BASE}/v1/ingest/list`);
+                const data = await res.json();
+                ingestedFiles = data.data || [];
+                renderFileList();
+            } catch (e) {
+                console.error('Load files error:', e);
+            }
+        }
+
+        function renderFileList() {
+            const list = document.getElementById('files-list');
+            const countEl = document.getElementById('file-count');
+            const fileNames = [...new Set(ingestedFiles.map(f => f.doc_metadata?.file_name).filter(Boolean))];
+
+            countEl.textContent = fileNames.length;
+
+            if (fileNames.length === 0) {
+                list.innerHTML = `<li class="text-slate-400 text-xs">${i18n[currentLang].noFiles}</li>`;
+                return;
+            }
+
+            list.innerHTML = fileNames.map(name => `
+                <li class="file-item flex items-center justify-between px-2 py-1.5 rounded-lg cursor-pointer hover:bg-slate-50 ${selectedFile === name ? 'bg-brand-50 border border-brand-200' : ''}" data-filename="${name}">
+                    <span class="truncate text-xs">📄 ${name}</span>
+                </li>
+            `).join('');
+
+            list.querySelectorAll('.file-item').forEach(item => {
+                item.addEventListener('click', () => selectFile(item.dataset.filename));
+            });
+        }
+
+        function selectFile(filename) {
+            selectedFile = selectedFile === filename ? null : filename;
+            renderFileList();
+            document.getElementById('delete-selected-btn').disabled = !selectedFile;
+            updateSubtitle();
+        }
+
+        async function handleFileUpload(e) {
+            const files = e.target.files;
+            for (const file of files) await uploadFile(file);
+            e.target.value = '';
+            await loadFiles();
+        }
+
+        async function handleFileDrop(e) {
+            e.preventDefault();
+            document.getElementById('upload-zone').classList.remove('border-brand-400', 'bg-brand-50');
+            for (const file of e.dataTransfer.files) await uploadFile(file);
+            await loadFiles();
+        }
+
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                await fetch(`${API_BASE}/v1/ingest/file`, { method: 'POST', body: formData });
+            } catch (e) {
+                console.error('Upload error:', e);
+            }
+        }
+
+        async function deleteSelected() {
+            if (!selectedFile) return;
+            const docsToDelete = ingestedFiles.filter(d => d.doc_metadata?.file_name === selectedFile);
+            for (const doc of docsToDelete) {
+                await fetch(`${API_BASE}/v1/ingest/${doc.doc_id}`, { method: 'DELETE' });
+            }
+            selectedFile = null;
+            document.getElementById('delete-selected-btn').disabled = true;
+            await loadFiles();
+        }
+
+        async function deleteAll() {
+            if (!confirm(currentLang === 'en' ? 'Delete ALL files?' : '¿Eliminar TODOS los archivos?')) return;
+            for (const doc of ingestedFiles) {
+                await fetch(`${API_BASE}/v1/ingest/${doc.doc_id}`, { method: 'DELETE' });
+            }
+            await loadFiles();
+        }
+
+        // ===== CHAT =====
+        function addMessage(role, content) {
+            const container = document.getElementById('chat-messages');
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} fade-in-up`;
+            wrapper.innerHTML = `
+                <div class="max-w-[85%] ${role === 'user' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-800'} px-4 py-3 rounded-2xl ${role === 'user' ? 'rounded-br-sm' : 'rounded-bl-sm'} text-sm leading-relaxed">
+                    ${formatMessage(content)}
+                </div>
+            `;
+            container.appendChild(wrapper);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function formatMessage(content) {
+            return content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>')
+                .replace(/```([\s\S]*?)```/g, '<pre class="bg-slate-200 p-2 rounded mt-2 text-xs overflow-x-auto"><code>$1</code></pre>');
+        }
+
+        async function handleChat(e) {
+            e.preventDefault();
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addMessage('user', message);
+            input.value = '';
+
+            document.getElementById('loading-indicator').classList.remove('hidden');
+
+            try {
+                let response;
+
+                if (currentMode === 'search') {
+                    response = await handleSearch(message);
+                } else {
+                    response = await handleChatRequest(message);
+                }
+
+                document.getElementById('loading-indicator').classList.add('hidden');
+                addMessage('assistant', response);
+                chatHistory.push({ role: 'user', content: message });
+                chatHistory.push({ role: 'assistant', content: response });
+
+            } catch (err) {
+                console.error('Chat error:', err);
+                document.getElementById('loading-indicator').classList.add('hidden');
+                addMessage('assistant', `<span class="text-red-500">${i18n[currentLang].errorMsg}</span>`);
+            }
+        }
+
+        async function handleChatRequest(message) {
+            const systemPrompt = document.getElementById('system-prompt').value.trim() ||
+                'You are a Senior MEAL Expert. Respond in the same language the user writes in.';
+
+            const messages = [
+                { role: 'system', content: systemPrompt },
+                ...chatHistory.slice(-10),
+                { role: 'user', content: message }
+            ];
+
+            const useContext = currentMode === 'rag' || currentMode === 'summarize';
+
+            // Build context filter if file selected
+            let contextFilter = null;
+            if (selectedFile && useContext) {
+                const docIds = ingestedFiles.filter(d => d.doc_metadata?.file_name === selectedFile).map(d => d.doc_id);
+                if (docIds.length > 0) contextFilter = { docs_ids: docIds };
+            }
+
+            const res = await fetch(`${API_BASE}/v1/chat/completions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages,
+                    use_context: useContext,
+                    context_filter: contextFilter,
+                    include_sources: true,
+                    stream: false
+                })
+            });
+
+            if (!res.ok) throw new Error('API Error');
+            const data = await res.json();
+
+            let answer = data.choices?.[0]?.message?.content || 'No response';
+
+            // Add sources if present
+            if (data.sources && data.sources.length > 0) {
+                const sourceFiles = [...new Set(data.sources.map(s => s.document?.doc_metadata?.file_name).filter(Boolean))];
+                if (sourceFiles.length > 0) {
+                    answer += `\n\n**Sources:** ${sourceFiles.join(', ')}`;
+                }
+            }
+
+            return answer;
+        }
+
+        async function handleSearch(message) {
+            const res = await fetch(`${API_BASE}/v1/chunks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: message, limit: 5, prev_next_chunks: 0 })
+            });
+
+            if (!res.ok) throw new Error('Search Error');
+            const data = await res.json();
+
+            if (!data.data || data.data.length === 0) {
+                return currentLang === 'en' ? 'No results found.' : 'No se encontraron resultados.';
+            }
+
+            return data.data.map((chunk, i) =>
+                `**${i + 1}. ${chunk.document?.doc_metadata?.file_name || 'Document'}**\n${chunk.text.substring(0, 300)}...`
+            ).join('\n\n---\n\n');
+        }
+
+        function clearChat() {
+            document.getElementById('chat-messages').innerHTML = `
+                <div class="flex justify-start fade-in-up">
+                    <div class="max-w-[85%] bg-slate-100 text-slate-800 px-4 py-3 rounded-2xl rounded-bl-sm text-sm leading-relaxed">
+                        ${i18n[currentLang].welcome}
+                    </div>
+                </div>
+            `;
+            chatHistory = [];
+        }
+    </script>
+</body>
+
+</html>

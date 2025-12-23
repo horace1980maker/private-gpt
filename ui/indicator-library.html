@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indicator Library Builder | MEAL RAG Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #8b5cf6, #6366f1);
+            transition: width 0.5s ease;
+        }
+
+        .markdown-body h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #1e293b;
+        }
+
+        .markdown-body h2 {
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem;
+            color: #6366f1;
+            border-bottom: 2px solid #e0e7ff;
+            padding-bottom: 0.5rem;
+        }
+
+        .markdown-body h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 1.25rem 0 0.5rem;
+            color: #334155;
+        }
+
+        .markdown-body p {
+            margin-bottom: 0.75rem;
+            line-height: 1.7;
+        }
+
+        .markdown-body ul,
+        .markdown-body ol {
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .markdown-body li {
+            margin-bottom: 0.35rem;
+        }
+
+        .markdown-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+        }
+
+        .markdown-body th,
+        .markdown-body td {
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        .markdown-body th {
+            background: #f1f5f9;
+            font-weight: 600;
+        }
+
+        .markdown-body strong {
+            color: #1e293b;
+        }
+
+        .content-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .content-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .phase-badge {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .phase-1 {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .phase-2 {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .phase-3 {
+            background: #d1fae5;
+            color: #065f46;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass-nav border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center gap-3 group">
+                    <div
+                        class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                    </div>
+                    <span class="font-display font-bold text-lg text-slate-900 tracking-tight">MEAL RAG Assistant</span>
+                </a>
+
+                <div class="flex items-center gap-6 text-sm font-medium text-slate-600">
+                    <a href="index.html" class="hover:text-brand-600 transition-colors flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <span data-i18n="navChat">Chat</span>
+                    </a>
+                    <a href="generator.html" class="hover:text-brand-600 transition-colors flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span data-i18n="navGenerator">Generator</span>
+                    </a>
+                    <a href="indicators.html" class="text-indigo-600 font-semibold flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <span data-i18n="navIndicators">Indicators</span>
+                    </a>
+                    <div class="h-5 w-px bg-slate-200"></div>
+                    <button id="lang-toggle"
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-colors">
+                        <span
+                            class="w-4 h-4 rounded-full overflow-hidden border border-slate-300 flex items-center justify-center text-[9px]">🌐</span>
+                        <span id="lang-label">EN</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-24 pb-8 px-4 sm:px-6 lg:px-8 min-h-screen">
+        <div class="max-w-6xl mx-auto">
+
+            <!-- Breadcrumb -->
+            <div class="mb-4">
+                <a href="indicators.html" class="text-sm text-slate-500 hover:text-indigo-600 flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span data-i18n="backToIndicators">Back to Indicators</span>
+                </a>
+            </div>
+
+            <!-- Page Header -->
+            <div class="text-center mb-8">
+                <h1 class="font-display text-3xl font-bold text-slate-900 mb-2" data-i18n="pageTitle">📚 Indicator
+                    Library Builder</h1>
+                <p class="text-slate-500 max-w-2xl mx-auto" data-i18n="pageSubtitle">Build a comprehensive,
+                    evidence-based indicator library from your organization's documentation. Includes extraction,
+                    normalization, PIRS sheets, gap analysis, and implementation roadmap.</p>
+            </div>
+
+            <!-- Config Panel -->
+            <div id="config-section" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+                <h2 class="font-display font-bold text-xl text-slate-900 mb-4 flex items-center gap-2">
+                    <span
+                        class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">⚙️</span>
+                    <span data-i18n="configTitle">Configuration</span>
+                </h2>
+
+                <div class="grid md:grid-cols-3 gap-6">
+                    <!-- Organization -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                            data-i18n="lblOrg">Organization</label>
+                        <select id="org-selector"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+
+                    <!-- Output Language -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                            data-i18n="lblLang">Output Language</label>
+                        <select id="lang-selector"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="es">Español</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+
+                    <!-- Inventory Check -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                            data-i18n="lblDocs">Available Documents</label>
+                        <button onclick="checkInventory()"
+                            class="w-full px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 border border-slate-200">
+                            <span>📋</span>
+                            <span data-i18n="btnCheckDocs">Check Inventory</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <div class="mt-6 flex justify-center">
+                    <button id="generate-btn" onclick="generateLibrary()"
+                        class="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/30 transition-all flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                        <span data-i18n="btnGenerate">Build Indicator Library</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stop Button (outside config-section so it's not affected by pointer-events-none) -->
+            <div id="stop-btn-container" class="hidden mb-6 flex justify-center">
+                <button id="stop-btn" onclick="stopGeneration()"
+                    class="px-8 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-red-500/30 transition-all flex items-center gap-2 animate-pulse">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                    </svg>
+                    <span data-i18n="btnStop">⛔ Stop Generation</span>
+                </button>
+            </div>
+
+            <!-- Progress Section (hidden initially) -->
+            <div id="progress-section" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-display font-bold text-xl text-slate-900 flex items-center gap-2">
+                        <span
+                            class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">⏳</span>
+                        <span data-i18n="progressTitle">Building Library...</span>
+                    </h2>
+                    <span id="progress-phase" class="phase-badge phase-1">Phase 1</span>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm mb-2">
+                        <span id="progress-text" class="text-slate-600 font-medium">Preparing...</span>
+                        <span id="progress-percent" class="text-indigo-600 font-bold">0%</span>
+                    </div>
+                    <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+                        <div id="progress-fill" class="progress-fill h-full rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Section List -->
+                <div id="section-list" class="space-y-2 max-h-64 overflow-y-auto">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Results Section (hidden initially) -->
+            <div id="results-section" class="hidden">
+                <!-- Action Bar -->
+                <div
+                    class="bg-white rounded-t-2xl border border-b-0 border-slate-200 px-6 py-4 flex items-center justify-between">
+                    <h2 class="font-display font-bold text-xl text-slate-900 flex items-center gap-2">
+                        <span
+                            class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">📚</span>
+                        <span data-i18n="resultsTitle">Indicator Library</span>
+                    </h2>
+                    <div class="flex gap-2">
+                        <button onclick="copyToClipboard()"
+                            class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            <span data-i18n="btnCopy">Copy</span>
+                        </button>
+                        <button onclick="downloadLibrary()"
+                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            <span data-i18n="btnDownload">Download .md</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Document Content -->
+                <div class="bg-white rounded-b-2xl border border-slate-200 shadow-sm p-6">
+                    <div id="results-content" class="content-scroll max-h-[700px] overflow-y-auto markdown-body"></div>
+                </div>
+
+                <!-- Metadata Bar -->
+                <div id="metadata-bar"
+                    class="mt-4 px-6 py-3 bg-slate-100 border border-slate-200 rounded-xl flex flex-wrap gap-4 text-xs text-slate-500">
+                    <span class="flex items-center gap-1">📁 <strong class="text-slate-700"
+                            id="meta-org">-</strong></span>
+                    <span class="flex items-center gap-1">📊 <strong class="text-slate-700"
+                            id="meta-sections">-</strong> sections</span>
+                    <span class="flex items-center gap-1">📝 <strong class="text-slate-700" id="meta-chars">-</strong>
+                        chars</span>
+                    <span id="meta-tokens-container" class="hidden flex items-center gap-1">💰 <strong
+                            class="text-slate-700" id="meta-tokens">-</strong> tokens</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast"
+        class="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl transition-all transform translate-y-20 opacity-0 z-50">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay"
+        class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div class="bg-white rounded-2xl p-8 shadow-2xl text-center max-w-sm">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-50 flex items-center justify-center">
+                <svg class="w-8 h-8 text-indigo-600 spinner" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+            </div>
+            <h3 id="loading-title" class="font-display font-bold text-lg text-slate-900 mb-2">Checking...</h3>
+            <p id="loading-text" class="text-sm text-slate-500">Please wait a moment.</p>
+        </div>
+    </div>
+
+    <script>
+        // --- TRANSLATIONS ---
+        const i18n = {
+            en: {
+                pageTitle: "📚 Indicator Library Builder",
+                pageSubtitle: "Build a comprehensive, evidence-based indicator library from your organization's documentation. Includes extraction, normalization, PIRS sheets, gap analysis, and implementation roadmap.",
+                navChat: "Chat",
+                navGenerator: "Generator",
+                navIndicators: "Indicators",
+                backToIndicators: "Back to Indicators",
+                configTitle: "Configuration",
+                lblOrg: "Organization",
+                lblLang: "Output Language",
+                lblDocs: "Available Documents",
+                btnCheckDocs: "Check Inventory",
+                btnGenerate: "Build Indicator Library",
+                btnStop: "Stop",
+                progressTitle: "Building Library...",
+                resultsTitle: "Indicator Library",
+                btnCopy: "Copy",
+                btnDownload: "Download .md",
+                selectOrg: "-- Select organization --",
+                errorOrg: "⚠️ Please select an organization",
+                success: "✅ Library generated successfully!",
+                sectionNames: [
+                    "Phase 1A: Document Inventory",
+                    "Phase 1B: Impact Indicators",
+                    "Phase 1C: Outcome Indicators",
+                    "Phase 1D: Output Indicators",
+                    "Phase 1E: Activity/Input Indicators",
+                    "Phase 2A: Normalization",
+                    "Phase 2B: Quality Assessment",
+                    "Phase 2C: PIRS Sheets",
+                    "Phase 2D: Gap Analysis",
+                    "Phase 3A: Proposed Indicators",
+                    "Phase 3B: Roadmap",
+                    "Phase 3C: Governance"
+                ]
+            },
+            es: {
+                pageTitle: "📚 Constructor de Biblioteca de Indicadores",
+                pageSubtitle: "Construye una biblioteca de indicadores completa y basada en evidencia a partir de la documentación de tu organización. Incluye extracción, normalización, fichas PIRS, análisis de brechas y hoja de ruta.",
+                navChat: "Chat",
+                navGenerator: "Generador",
+                navIndicators: "Indicadores",
+                backToIndicators: "Volver a Indicadores",
+                configTitle: "Configuración",
+                lblOrg: "Organización",
+                lblLang: "Idioma de Salida",
+                lblDocs: "Documentos Disponibles",
+                btnCheckDocs: "Ver Inventario",
+                btnGenerate: "Construir Biblioteca de Indicadores",
+                btnStop: "Detener",
+                progressTitle: "Construyendo Biblioteca...",
+                resultsTitle: "Biblioteca de Indicadores",
+                btnCopy: "Copiar",
+                btnDownload: "Descargar .md",
+                selectOrg: "-- Selecciona organización --",
+                errorOrg: "⚠️ Por favor selecciona una organización",
+                success: "✅ ¡Biblioteca generada exitosamente!",
+                sectionNames: [
+                    "Fase 1A: Inventario Documental",
+                    "Fase 1B: Indicadores de Impacto",
+                    "Fase 1C: Indicadores de Resultado",
+                    "Fase 1D: Indicadores de Producto",
+                    "Fase 1E: Indicadores de Actividad/Insumo",
+                    "Fase 2A: Normalización",
+                    "Fase 2B: Evaluación de Calidad",
+                    "Fase 2C: Fichas PIRS",
+                    "Fase 2D: Análisis de Brechas",
+                    "Fase 3A: Indicadores Propuestos",
+                    "Fase 3B: Hoja de Ruta",
+                    "Fase 3C: Gobernanza"
+                ]
+            }
+        };
+
+        // --- STATE ---
+        let currentLang = 'en';
+        let generatedDocument = '';
+        let generatedMetadata = null;
+        let currentAbortController = null;
+        let currentProgressInterval = null;
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchOrganizations();
+            renderInterface();
+            document.getElementById('lang-toggle').addEventListener('click', toggleLanguage);
+        });
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'es' : 'en';
+            document.getElementById('lang-label').textContent = currentLang.toUpperCase();
+            document.getElementById('lang-selector').value = currentLang;
+            renderInterface();
+        }
+
+        function renderInterface() {
+            const t = i18n[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.innerHTML = t[key];
+            });
+
+            // Update org selector placeholder
+            const orgSelect = document.getElementById('org-selector');
+            if (orgSelect.options[0] && orgSelect.options[0].value === '') {
+                orgSelect.options[0].text = t.selectOrg;
+            }
+        }
+
+        async function fetchOrganizations() {
+            const select = document.getElementById('org-selector');
+            const t = i18n[currentLang];
+            try {
+                const res = await fetch(`${API_BASE_URL}/orgs`);
+                const data = await res.json();
+                select.innerHTML = `<option value="">${t.selectOrg}</option>`;
+                (data.orgs || []).forEach(org => {
+                    const opt = document.createElement('option');
+                    opt.value = org;
+                    opt.textContent = org;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                select.innerHTML = '<option value="">Error loading</option>';
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        async function checkInventory() {
+            const orgId = document.getElementById('org-selector').value;
+            if (!orgId) {
+                showToast(i18n[currentLang].errorOrg);
+                return;
+            }
+
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            document.getElementById('loading-title').textContent = 'Checking documents...';
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/inventory/${orgId}`);
+                const data = await res.json();
+
+                document.getElementById('loading-overlay').classList.add('hidden');
+
+                if (data.files && data.files.length > 0) {
+                    alert(`✅ Found ${data.count} documents for ${orgId}:\n\n${data.files.join('\n')}`);
+                } else {
+                    alert(`⚠️ No documents found for ${orgId}.\nPlease upload documents from the Admin Dashboard.`);
+                }
+            } catch (e) {
+                document.getElementById('loading-overlay').classList.add('hidden');
+                showToast('Error checking inventory: ' + e.message);
+            }
+        }
+
+        async function generateLibrary() {
+            const orgId = document.getElementById('org-selector').value;
+            const lang = document.getElementById('lang-selector').value;
+            const t = i18n[currentLang];
+
+            if (!orgId) {
+                showToast(t.errorOrg);
+                return;
+            }
+
+            // Show progress UI
+            document.getElementById('config-section').classList.add('opacity-50', 'pointer-events-none');
+            document.getElementById('progress-section').classList.remove('hidden');
+            document.getElementById('results-section').classList.add('hidden');
+
+            const btn = document.getElementById('generate-btn');
+            const stopBtnContainer = document.getElementById('stop-btn-container');
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="w-5 h-5 spinner" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> Generating...`;
+            stopBtnContainer.classList.remove('hidden');
+
+            // Create AbortController
+            currentAbortController = new AbortController();
+
+            // Generate Request ID
+            const requestId = 'lib_' + Math.random().toString(36).substr(2, 9);
+
+            // Build section list
+            const sections = t.sectionNames;
+            const sectionList = document.getElementById('section-list');
+            sectionList.innerHTML = '';
+            sections.forEach((name, i) => {
+                const phaseNum = i < 5 ? 1 : (i < 9 ? 2 : 3);
+                const item = document.createElement('div');
+                item.id = `section-${i}`;
+                item.className = 'flex items-center gap-3 p-3 bg-slate-50 rounded-lg text-sm text-slate-500';
+                item.innerHTML = `<span class="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-xs">⏸</span><span>${name}</span><span class="ml-auto phase-badge phase-${phaseNum}">P${phaseNum}</span>`;
+                sectionList.appendChild(item);
+            });
+
+            // Progress polling
+            currentProgressInterval = setInterval(async () => {
+                try {
+                    const progRes = await fetch(`${API_BASE_URL}/progress/${requestId}`);
+                    if (progRes.ok) {
+                        const data = await progRes.json();
+                        if (data.status !== "unknown") {
+                            updateProgress(data.percent, sections);
+                            // Update phase badge
+                            const phaseNum = data.percent < 42 ? 1 : (data.percent < 75 ? 2 : 3);
+                            document.getElementById('progress-phase').className = `phase-badge phase-${phaseNum}`;
+                            document.getElementById('progress-phase').textContent = `Phase ${phaseNum}`;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Progress poll error:", e);
+                }
+            }, 1000);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/generate-document`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        org_id: orgId,
+                        document_type: 'indicator_library',
+                        year: new Date().getFullYear(),
+                        lang,
+                        request_id: requestId
+                    }),
+                    signal: currentAbortController.signal
+                });
+
+                clearInterval(currentProgressInterval);
+                if (!response.ok) throw new Error((await response.json()).detail || 'Generation failed');
+
+                const result = await response.json();
+                generatedDocument = result.document;
+                generatedMetadata = result.metadata;
+
+                updateProgress(100, sections);
+                setTimeout(() => showResults(result), 400);
+
+            } catch (error) {
+                clearInterval(currentProgressInterval);
+                if (error.name === 'AbortError') {
+                    showToast('⛔ Generation stopped');
+                } else {
+                    showToast(`❌ Error: ${error.message}`);
+                }
+                resetUI();
+            }
+        }
+
+        function updateProgress(percent, sections) {
+            document.getElementById('progress-fill').style.width = `${percent}%`;
+            document.getElementById('progress-percent').textContent = `${Math.round(percent)}%`;
+            const completedCount = Math.floor((percent / 100) * sections.length);
+
+            sections.forEach((_, i) => {
+                const item = document.getElementById(`section-${i}`);
+                const icon = item.querySelector('span:first-child');
+                if (i < completedCount) {
+                    item.className = 'flex items-center gap-3 p-3 bg-indigo-50 border border-indigo-200 rounded-lg text-sm text-indigo-700';
+                    icon.className = 'w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-xs';
+                    icon.innerHTML = '✓';
+                } else if (i === completedCount && percent < 100) {
+                    item.className = 'flex items-center gap-3 p-3 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-700';
+                    icon.className = 'w-5 h-5 rounded-full border-2 border-purple-500 border-t-transparent spinner flex items-center justify-center';
+                    icon.innerHTML = '';
+                }
+            });
+
+            document.getElementById('progress-text').textContent = percent < 100
+                ? `Processing section ${completedCount + 1} of ${sections.length}...`
+                : 'Complete!';
+        }
+
+        function showResults(result) {
+            document.getElementById('progress-section').classList.add('hidden');
+            document.getElementById('results-section').classList.remove('hidden');
+            document.getElementById('config-section').classList.remove('opacity-50', 'pointer-events-none');
+
+            document.getElementById('results-content').innerHTML = marked.parse(result.document);
+            document.getElementById('meta-org').textContent = result.metadata.org_id;
+            document.getElementById('meta-sections').textContent = result.metadata.sections_count;
+            document.getElementById('meta-chars').textContent = result.metadata.character_count.toLocaleString();
+
+            if (result.metadata.token_usage) {
+                document.getElementById('meta-tokens-container').classList.remove('hidden');
+                document.getElementById('meta-tokens').textContent = result.metadata.token_usage.total_tokens.toLocaleString();
+            }
+
+            resetUI();
+            showToast(i18n[currentLang].success);
+        }
+
+        function resetUI() {
+            const btn = document.getElementById('generate-btn');
+            const stopBtnContainer = document.getElementById('stop-btn-container');
+            btn.disabled = false;
+            btn.innerHTML = `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg> <span data-i18n="btnGenerate">${i18n[currentLang].btnGenerate}</span>`;
+            stopBtnContainer.classList.add('hidden');
+            document.getElementById('config-section').classList.remove('opacity-50', 'pointer-events-none');
+        }
+
+        function stopGeneration() {
+            // Abort client-side fetch request
+            if (currentAbortController) {
+                currentAbortController.abort();
+            }
+            // Clear progress polling
+            if (currentProgressInterval) {
+                clearInterval(currentProgressInterval);
+            }
+
+            // Reset UI immediately
+            resetUI();
+            document.getElementById('progress-section').classList.add('hidden');
+
+            // Show toast explaining behavior
+            showToast('⛔ Request cancelled. Backend may continue briefly.');
+
+            console.log('⛔ Generation cancelled by user. Note: Server-side processing may continue until current section completes.');
+        }
+
+        function copyToClipboard() {
+            if (generatedDocument) {
+                navigator.clipboard.writeText(generatedDocument);
+                showToast('📋 Copied to clipboard!');
+            }
+        }
+
+        function downloadLibrary() {
+            if (!generatedDocument) return;
+            const orgId = document.getElementById('org-selector').value || 'org';
+            const blob = new Blob([generatedDocument], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `indicator_library_${orgId}_${new Date().toISOString().split('T')[0]}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-white py-10 border-t border-slate-800 mt-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                <div>
+                    <h4 class="font-display font-bold text-xl mb-2">MEAL RAG Assistant</h4>
+                    <p class="text-slate-400 text-sm">Empowering organizations with intelligent monitoring solutions.
+                    </p>
+                </div>
+                <div class="flex justify-center space-x-6">
+                    <a href="index.html"
+                        class="text-slate-400 hover:text-white transition-colors text-sm font-medium">Chat</a>
+                    <a href="generator.html"
+                        class="text-slate-400 hover:text-white transition-colors text-sm font-medium">Generator</a>
+                    <a href="indicators.html" class="text-indigo-400 text-sm font-medium">Indicators</a>
+                </div>
+                <div class="text-center md:text-right">
+                    <p class="text-slate-500 text-sm">&copy; 2025 MEAL AI Systems. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

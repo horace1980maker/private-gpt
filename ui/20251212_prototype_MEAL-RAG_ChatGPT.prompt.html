@@ -1,0 +1,1641 @@
+<!doctype html>
+<html lang="en" class="h-full scroll-smooth">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MEAL RAG Workbench — Prototype</title>
+
+  <!-- Tailwind (UI style inspired by web.html) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["Inter", "ui-sans-serif", "system-ui", "Segoe UI", "Roboto", "Helvetica", "Arial", "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"]
+          },
+          boxShadow: {
+            soft: "0 10px 30px rgba(0,0,0,.35)",
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg0: #070A0F;           /* page */
+      --bg1: rgba(255,255,255,.04); /* panel */
+      --bg2: rgba(255,255,255,.06); /* panel alt */
+      --border: rgba(255,255,255,.10);
+      --border2: rgba(255,255,255,.14);
+      --text: #E8F0FA;
+      --muted: rgba(232,240,250,.70);
+      --faint: rgba(232,240,250,.45);
+      --accent: #7DD3FC;
+      --accent2:#A78BFA;
+      --good:#34D399;
+      --warn:#FBBF24;
+      --bad:#FB7185;
+    }
+    body{
+      background: radial-gradient(900px 900px at 15% 10%, rgba(125,211,252,.08), transparent 55%),
+                  radial-gradient(700px 700px at 80% 15%, rgba(167,139,250,.10), transparent 55%),
+                  radial-gradient(800px 800px at 35% 85%, rgba(52,211,153,.06), transparent 55%),
+                  var(--bg0);
+      color: var(--text);
+    }
+    .panel{
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+      backdrop-filter: blur(10px);
+    }
+    .panelFlat{
+      background: rgba(255,255,255,.035);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+    .chip{
+      border: 1px solid var(--border2);
+      background: rgba(255,255,255,.05);
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .kbd{
+      border: 1px solid var(--border2);
+      background: rgba(255,255,255,.06);
+      padding: 1px 6px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .scrollbar::-webkit-scrollbar{ width: 10px; height: 10px; }
+    .scrollbar::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.12); border-radius: 999px; }
+    .scrollbar::-webkit-scrollbar-thumb:hover{ background: rgba(255,255,255,.18); }
+    .glowRing{ box-shadow: 0 0 0 4px rgba(125,211,252,.12), 0 0 0 1px rgba(125,211,252,.35); }
+    .hr{ height:1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent); }
+    /* subtle animated aurora */
+    .aurora:before{
+      content:"";
+      position:absolute; inset:-140px;
+      background:
+        radial-gradient(600px 320px at 20% 30%, rgba(125,211,252,.14), transparent 60%),
+        radial-gradient(500px 320px at 70% 20%, rgba(167,139,250,.16), transparent 60%),
+        radial-gradient(520px 340px at 55% 80%, rgba(52,211,153,.12), transparent 60%);
+      filter: blur(12px);
+      opacity:.85;
+      animation: floaty 18s ease-in-out infinite alternate;
+      pointer-events:none;
+    }
+    @keyframes floaty{
+      from{ transform: translate3d(-18px,-10px,0) scale(1.02); }
+      to  { transform: translate3d(18px,10px,0) scale(1.03); }
+    }
+  </style>
+</head>
+
+<body class="h-full font-sans">
+  <div class="min-h-full">
+    <!-- Top bar -->
+    <header class="sticky top-0 z-40">
+      <div class="mx-auto max-w-[1600px] px-4 md:px-6 py-4">
+        <div class="panel relative aurora overflow-hidden">
+          <div class="relative flex flex-col gap-3 md:flex-row md:items-center md:justify-between p-4 md:p-5">
+            <div class="flex items-start gap-3">
+              <div class="h-10 w-10 rounded-2xl glowRing bg-white/5 border border-white/10 flex items-center justify-center">
+                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M12 3l8 4v10l-8 4-8-4V7l8-4Z" stroke="rgba(125,211,252,.95)" stroke-width="1.5"/>
+                  <path d="M12 7v14" stroke="rgba(167,139,250,.85)" stroke-width="1.5"/>
+                  <path d="M4 7l8 4 8-4" stroke="rgba(232,240,250,.75)" stroke-width="1.5"/>
+                </svg>
+              </div>
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h1 class="text-lg md:text-xl font-extrabold tracking-tight" data-i18n="appTitle">MEAL RAG Workbench</h1>
+                  <span class="chip" data-i18n="tagline">AI‑augmented IDE for MEAL thinking</span>
+                  <span id="govBadge" class="chip" style="border-color: rgba(251,191,36,.35); color: rgba(251,191,36,.95)">Governance: Strict</span>
+                </div>
+                <p class="mt-1 text-sm text-white/70 max-w-[74ch]" data-i18n="headerBlurb">
+                  Evidence-first workspace to retrieve, test, synthesize, and audit claims—preserving traceability and institutional memory.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 md:justify-end">
+              <div class="panelFlat px-3 py-2 flex items-center gap-2">
+                <span class="text-xs text-white/60" data-i18n="org">Org</span>
+                <select id="orgSelect" class="bg-transparent text-sm outline-none">
+                  <option value="Org A">Org A</option>
+                  <option value="Org B">Org B</option>
+                  <option value="CATIE">CATIE</option>
+                  <option value="PARES">PARES</option>
+                </select>
+              </div>
+
+              <button id="langToggle" class="panelFlat px-3 py-2 text-sm hover:bg-white/10 transition">
+                EN / ES
+              </button>
+
+              <button id="govToggle" class="panelFlat px-3 py-2 text-sm hover:bg-white/10 transition flex items-center gap-2">
+                <span class="h-2 w-2 rounded-full" id="govDot" style="background: var(--warn)"></span>
+                <span data-i18n="governance">Governance</span>
+              </button>
+
+              <button id="cmdBtn" class="panelFlat px-3 py-2 text-sm hover:bg-white/10 transition flex items-center gap-2">
+                <span data-i18n="commandPalette">Command</span>
+                <span class="kbd">Ctrl</span><span class="kbd">K</span>
+              </button>
+
+              <button id="exportBtn" class="px-3 py-2 text-sm font-semibold rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 transition">
+                <span data-i18n="export">Export</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main layout -->
+    <main class="mx-auto max-w-[1600px] px-4 md:px-6 pb-6">
+      <!-- Overview strip -->
+      <section class="grid grid-cols-1 xl:grid-cols-12 gap-4 mb-4">
+        <div class="xl:col-span-8 panel p-4 md:p-5">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="chip" data-i18n="whatItIs">What it is</span>
+            <span class="chip" data-i18n="corePrinciples">Core principles</span>
+            <span class="chip" data-i18n="notAChatbot">IDE, not a chatbot</span>
+          </div>
+          <h2 class="text-xl md:text-2xl font-extrabold tracking-tight" data-i18n="overviewTitle">A persistent workspace for evidence, drafts, and audit trails</h2>
+          <p class="mt-2 text-sm md:text-base text-white/70 max-w-[120ch]" data-i18n="overviewBody">
+            Use retrieval to inspect passages before synthesis. Draft learning questions and donor-ready narratives with explicit citations.
+            Enforce governance rules to avoid fabrication and to log uncertainty when evidence is missing.
+          </p>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button id="jumpWorkbench" class="px-4 py-2 rounded-xl font-semibold border border-white/15 bg-white/10 hover:bg-white/15 transition" data-i18n="openWorkbench">
+              Open Workbench
+            </button>
+            <button id="jumpAbout" class="px-4 py-2 rounded-xl font-semibold border border-white/15 bg-transparent hover:bg-white/10 transition" data-i18n="readConcept">
+              Read concept
+            </button>
+          </div>
+        </div>
+
+        <div class="xl:col-span-4 panel p-4 md:p-5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold tracking-tight text-white/90" data-i18n="quickActions">Quick actions</h3>
+            <span class="chip" data-i18n="demoMode">Demo mode</span>
+          </div>
+          <div class="mt-3 space-y-2 text-sm">
+            <button class="w-full panelFlat px-3 py-2 text-left hover:bg-white/10 transition" data-action="seedQuestion">
+              <span class="font-semibold" data-i18n="seedQTitle">Seed a learning question</span>
+              <div class="text-white/60" data-i18n="seedQDesc">Insert a strong MEAL learning question template.</div>
+            </button>
+            <button class="w-full panelFlat px-3 py-2 text-left hover:bg-white/10 transition" data-action="runCoverage">
+              <span class="font-semibold" data-i18n="coverageTitle">Evidence coverage check</span>
+              <div class="text-white/60" data-i18n="coverageDesc">Scan draft for uncited claims.</div>
+            </button>
+            <button class="w-full panelFlat px-3 py-2 text-left hover:bg-white/10 transition" data-action="openCopilot">
+              <span class="font-semibold" data-i18n="openCopilotTitle">Open Copilot</span>
+              <div class="text-white/60" data-i18n="openCopilotDesc">Ask with workspace context.</div>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Workbench grid -->
+      <section id="workbench" class="grid grid-cols-1 xl:grid-cols-12 gap-4">
+        <!-- Sources -->
+        <aside class="xl:col-span-3 panel p-4 md:p-5">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="text-sm font-bold tracking-tight" data-i18n="sources">Sources</h3>
+            <button id="addDocBtn" class="chip hover:bg-white/10 transition" data-i18n="addMockDoc">+ Mock</button>
+          </div>
+
+          <div class="mt-3 grid grid-cols-1 gap-2">
+            <div class="panelFlat p-2">
+              <label class="text-xs text-white/60" data-i18n="searchDocs">Search documents</label>
+              <input id="docSearch" class="mt-1 w-full bg-transparent outline-none text-sm" placeholder="Type to filter…" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div class="panelFlat p-2">
+                <label class="text-xs text-white/60" data-i18n="filterYear">Year</label>
+                <select id="filterYear" class="mt-1 w-full bg-transparent outline-none text-sm">
+                  <option value="all" data-i18n="all">All</option>
+                </select>
+              </div>
+              <div class="panelFlat p-2">
+                <label class="text-xs text-white/60" data-i18n="filterTheme">Theme</label>
+                <select id="filterTheme" class="mt-1 w-full bg-transparent outline-none text-sm">
+                  <option value="all" data-i18n="all">All</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 text-xs text-white/55 flex items-center justify-between">
+            <span data-i18n="scopeNote">Scoped to the selected organization.</span>
+            <span class="chip" id="docCount">0</span>
+          </div>
+
+          <div id="docList" class="mt-3 space-y-2 max-h-[56vh] overflow-auto pr-1 scrollbar"></div>
+
+          <div class="mt-4 hr"></div>
+
+          <div class="mt-4">
+            <h4 class="text-xs font-bold text-white/80 mb-2" data-i18n="selectedEvidence">Selected evidence</h4>
+            <div id="selectedEvidenceList" class="space-y-2 max-h-44 overflow-auto pr-1 scrollbar"></div>
+          </div>
+        </aside>
+
+        <!-- Workspace -->
+        <section class="xl:col-span-6 panel p-4 md:p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-bold tracking-tight" data-i18n="workspace">Workspace</h3>
+              <span class="chip" id="workspaceStatus" data-i18n="statusReady">Ready</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button id="retrieveBtn" class="panelFlat px-3 py-2 text-sm font-semibold hover:bg-white/10 transition" data-i18n="retrieve">Retrieve</button>
+              <button id="synthBtn" class="px-3 py-2 text-sm font-semibold rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 transition" data-i18n="synthesize">Synthesize</button>
+              <button id="qaBtn" class="panelFlat px-3 py-2 text-sm font-semibold hover:bg-white/10 transition" data-i18n="qa">QA</button>
+            </div>
+          </div>
+
+          <div class="mt-3 panelFlat p-3">
+            <label class="text-xs text-white/60" data-i18n="prompt">Question / prompt</label>
+            <textarea id="query" class="mt-2 w-full bg-transparent outline-none text-sm resize-none" rows="3" placeholder="Ask a question across your evidence…"></textarea>
+            <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-2 text-xs text-white/55">
+                <span data-i18n="hintRetrieve">Tip: Retrieve first to inspect passages before synthesis.</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <span class="chip" id="selectedDocsChip">0 docs</span>
+                <span class="chip" id="selectedPassagesChip">0 passages</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 grid grid-cols-1 gap-3">
+            <div class="panelFlat p-3">
+              <div class="flex items-center justify-between gap-2">
+                <h4 class="text-xs font-bold text-white/80" data-i18n="editor">Editor</h4>
+                <div class="flex items-center gap-2 text-xs">
+                  <button id="saveDraftBtn" class="chip hover:bg-white/10 transition" data-i18n="saveDraft">Save draft</button>
+                  <button id="clearDraftBtn" class="chip hover:bg-white/10 transition" data-i18n="clear">Clear</button>
+                </div>
+              </div>
+              <textarea id="editor" class="mt-2 w-full bg-transparent outline-none text-sm resize-none scrollbar" rows="14" placeholder="Draft your synthesis here…"></textarea>
+
+              <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
+                <div class="panelFlat p-2">
+                  <div class="text-xs text-white/60" data-i18n="coverage">Coverage</div>
+                  <div class="mt-1 flex items-center gap-2">
+                    <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div id="coverageBar" class="h-2 rounded-full" style="width: 0%; background: var(--bad)"></div>
+                    </div>
+                    <span id="coveragePct" class="text-xs text-white/70 w-10 text-right">0%</span>
+                  </div>
+                </div>
+                <div class="panelFlat p-2">
+                  <div class="text-xs text-white/60" data-i18n="citations">Citations</div>
+                  <div class="mt-1 text-sm font-semibold" id="citationCount">0</div>
+                </div>
+                <div class="panelFlat p-2">
+                  <div class="text-xs text-white/60" data-i18n="uncertainty">Uncertainty</div>
+                  <div class="mt-1 text-sm font-semibold" id="unknownCount">0</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panelFlat p-3" id="about" style="display:none">
+              <h4 class="text-sm font-bold" data-i18n="conceptHeader">Concept notes</h4>
+              <div class="mt-2 text-sm text-white/70 space-y-2">
+                <p data-i18n="conceptP1">
+                  The Workbench is an IDE for MEAL thinking: drafting learning questions, testing evidence, checking assumptions, producing donor-ready outputs, and auditing claims against sources.
+                </p>
+                <ul class="list-disc pl-5 space-y-1">
+                  <li data-i18n="conceptL1">Evidence-first by design: major claims require citations.</li>
+                  <li data-i18n="conceptL2">Governance and traceability: no fabrication, explicit uncertainty when missing.</li>
+                  <li data-i18n="conceptL3">Organization-specific boundaries: no cross-org mixing by default.</li>
+                  <li data-i18n="conceptL4">Bilingual workflows: English and Spanish.</li>
+                </ul>
+                <p class="text-white/60" data-i18n="conceptP2">
+                  This prototype is fully local and simulates retrieval/synthesis. Integrate your RAG backend to make it real.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Evidence -->
+        <aside class="xl:col-span-3 panel p-4 md:p-5">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="text-sm font-bold tracking-tight" data-i18n="evidence">Evidence</h3>
+            <button id="clearEvidenceBtn" class="chip hover:bg-white/10 transition" data-i18n="clear">Clear</button>
+          </div>
+
+          <div class="mt-3 panelFlat p-2">
+            <label class="text-xs text-white/60" data-i18n="searchPassages">Search passages</label>
+            <input id="passageSearch" class="mt-1 w-full bg-transparent outline-none text-sm" placeholder="Filter evidence…" />
+          </div>
+
+          <div id="passageList" class="mt-3 space-y-2 max-h-[56vh] overflow-auto pr-1 scrollbar"></div>
+
+          <div class="mt-4 hr"></div>
+
+          <div class="mt-4">
+            <div class="flex items-center justify-between gap-2">
+              <h4 class="text-xs font-bold text-white/80" data-i18n="audit">Audit</h4>
+              <button id="contradictionBtn" class="chip hover:bg-white/10 transition" data-i18n="logContradiction">Log contradiction</button>
+            </div>
+            <div id="auditLog" class="mt-2 space-y-2 max-h-40 overflow-auto pr-1 scrollbar"></div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- Console + Copilot -->
+      <section class="grid grid-cols-1 xl:grid-cols-12 gap-4 mt-4">
+        <div class="xl:col-span-8 panel p-4 md:p-5">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="text-sm font-bold tracking-tight" data-i18n="console">Console & Tasks</h3>
+            <button id="clearConsoleBtn" class="chip hover:bg-white/10 transition" data-i18n="clear">Clear</button>
+          </div>
+          <div id="console" class="mt-3 panelFlat p-3 max-h-52 overflow-auto pr-1 scrollbar text-sm mono text-white/75"></div>
+        </div>
+
+        <div class="xl:col-span-4 panel p-4 md:p-5" id="copilotPanel">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="text-sm font-bold tracking-tight" data-i18n="copilot">Copilot</h3>
+            <div class="flex items-center gap-2 text-xs">
+              <span class="chip" data-i18n="contextAware">Context‑aware</span>
+              <button id="closeCopilotBtn" class="chip hover:bg-white/10 transition" data-i18n="hide">Hide</button>
+            </div>
+          </div>
+
+          <div id="chat" class="mt-3 panelFlat p-3 max-h-48 overflow-auto pr-1 scrollbar text-sm text-white/80 space-y-2"></div>
+
+          <div class="mt-3 panelFlat p-2">
+            <label class="text-xs text-white/60" data-i18n="message">Message</label>
+            <textarea id="chatInput" class="mt-1 w-full bg-transparent outline-none text-sm resize-none" rows="2" placeholder="Ask the copilot…"></textarea>
+            <div class="mt-2 flex items-center justify-between gap-2">
+              <div class="text-xs text-white/55" id="copilotHint" data-i18n="copilotHint">
+                In strict mode, Copilot requires selected evidence.
+              </div>
+              <button id="sendChatBtn" class="px-3 py-2 text-sm font-semibold rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 transition" data-i18n="send">Send</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Command palette modal -->
+  <div id="cmdOverlay" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/60"></div>
+    <div class="absolute inset-0 flex items-start justify-center p-4 md:p-8">
+      <div class="panel w-full max-w-2xl overflow-hidden">
+        <div class="p-4 md:p-5 border-b border-white/10 flex items-center justify-between gap-3">
+          <div>
+            <div class="text-sm font-bold" data-i18n="commandPalette">Command</div>
+            <div class="text-xs text-white/60" data-i18n="cmdHint">Type to find actions. Enter to run. Esc to close.</div>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-white/60">
+            <span class="kbd">Esc</span>
+          </div>
+        </div>
+        <div class="p-4 md:p-5">
+          <input id="cmdSearch" class="w-full panelFlat px-3 py-2 outline-none text-sm bg-transparent" placeholder="Search commands…" />
+          <div id="cmdList" class="mt-3 space-y-2 max-h-72 overflow-auto pr-1 scrollbar"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export modal -->
+  <div id="exportOverlay" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/60"></div>
+    <div class="absolute inset-0 flex items-start justify-center p-4 md:p-8">
+      <div class="panel w-full max-w-2xl overflow-hidden">
+        <div class="p-4 md:p-5 border-b border-white/10 flex items-center justify-between gap-3">
+          <div>
+            <div class="text-sm font-bold" data-i18n="export">Export</div>
+            <div class="text-xs text-white/60" data-i18n="exportHint">Copy a donor-ready draft with citations.</div>
+          </div>
+          <button id="closeExportBtn" class="chip hover:bg-white/10 transition" data-i18n="close">Close</button>
+        </div>
+        <div class="p-4 md:p-5">
+          <div class="text-xs text-white/60 mb-2" data-i18n="exportPreview">Preview</div>
+          <textarea id="exportText" class="w-full panelFlat p-3 bg-transparent outline-none text-sm resize-none scrollbar" rows="12"></textarea>
+          <div class="mt-3 flex items-center justify-between gap-2">
+            <div class="text-xs text-white/55" data-i18n="exportFooter">Tip: paste into Word/Google Docs, keep citations intact.</div>
+            <button id="copyExportBtn" class="px-3 py-2 text-sm font-semibold rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 transition" data-i18n="copy">Copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* -----------------------------
+   Prototype data + state
+-------------------------------- */
+const i18n = {
+  en: {
+    appTitle: "MEAL RAG Workbench",
+    tagline: "AI‑augmented IDE for MEAL thinking",
+    headerBlurb: "Evidence-first workspace to retrieve, test, synthesize, and audit claims—preserving traceability and institutional memory.",
+    org: "Org",
+    governance: "Governance",
+    commandPalette: "Command",
+    export: "Export",
+    exportHint: "Copy a donor-ready draft with citations.",
+    exportPreview: "Preview",
+    exportFooter: "Tip: paste into Word/Google Docs, keep citations intact.",
+    copy: "Copy",
+    close: "Close",
+    whatItIs: "What it is",
+    corePrinciples: "Core principles",
+    notAChatbot: "IDE, not a chatbot",
+    overviewTitle: "A persistent workspace for evidence, drafts, and audit trails",
+    overviewBody: "Use retrieval to inspect passages before synthesis. Draft learning questions and donor-ready narratives with explicit citations. Enforce governance rules to avoid fabrication and to log uncertainty when evidence is missing.",
+    openWorkbench: "Open Workbench",
+    readConcept: "Read concept",
+    quickActions: "Quick actions",
+    demoMode: "Demo mode",
+    seedQTitle: "Seed a learning question",
+    seedQDesc: "Insert a strong MEAL learning question template.",
+    coverageTitle: "Evidence coverage check",
+    coverageDesc: "Scan draft for uncited claims.",
+    openCopilotTitle: "Open Copilot",
+    openCopilotDesc: "Ask with workspace context.",
+    sources: "Sources",
+    addMockDoc: "+ Mock",
+    searchDocs: "Search documents",
+    filterYear: "Year",
+    filterTheme: "Theme",
+    all: "All",
+    scopeNote: "Scoped to the selected organization.",
+    selectedEvidence: "Selected evidence",
+    workspace: "Workspace",
+    statusReady: "Ready",
+    retrieve: "Retrieve",
+    synthesize: "Synthesize",
+    qa: "QA",
+    prompt: "Question / prompt",
+    hintRetrieve: "Tip: Retrieve first to inspect passages before synthesis.",
+    editor: "Editor",
+    saveDraft: "Save draft",
+    clear: "Clear",
+    coverage: "Coverage",
+    citations: "Citations",
+    uncertainty: "Uncertainty",
+    conceptHeader: "Concept notes",
+    conceptP1: "The Workbench is an IDE for MEAL thinking: drafting learning questions, testing evidence, checking assumptions, producing donor-ready outputs, and auditing claims against sources.",
+    conceptL1: "Evidence-first by design: major claims require citations.",
+    conceptL2: "Governance and traceability: no fabrication, explicit uncertainty when missing.",
+    conceptL3: "Organization-specific boundaries: no cross-org mixing by default.",
+    conceptL4: "Bilingual workflows: English and Spanish.",
+    conceptP2: "This prototype is fully local and simulates retrieval/synthesis. Integrate your RAG backend to make it real.",
+    evidence: "Evidence",
+    searchPassages: "Search passages",
+    audit: "Audit",
+    logContradiction: "Log contradiction",
+    console: "Console & Tasks",
+    copilot: "Copilot",
+    contextAware: "Context‑aware",
+    hide: "Hide",
+    message: "Message",
+    copilotHint: "In strict mode, Copilot requires selected evidence.",
+    send: "Send",
+    cmdHint: "Type to find actions. Enter to run. Esc to close.",
+    exportDone: "Export copied to clipboard.",
+    saved: "Draft saved.",
+    cleared: "Cleared.",
+    strictOn: "Governance: Strict",
+    strictOff: "Governance: Relaxed",
+    missingEvidence: "Unknown: no selected evidence supports this request.",
+    retrievalDone: "Retrieval completed.",
+    synthesisDone: "Synthesis drafted into the editor.",
+    qaDone: "QA scan completed.",
+    contradictionLogged: "Contradiction logged.",
+    docAdded: "Mock document added.",
+    copilotOpened: "Copilot opened.",
+    copilotClosed: "Copilot hidden.",
+    aboutShown: "Concept notes opened.",
+    aboutHidden: "Concept notes closed.",
+  },
+  es: {
+    appTitle: "MEAL RAG Workbench",
+    tagline: "IDE con IA para pensamiento MEAL",
+    headerBlurb: "Espacio basado en evidencia para recuperar, probar, sintetizar y auditar afirmaciones—con trazabilidad y memoria institucional.",
+    org: "Org",
+    governance: "Gobernanza",
+    commandPalette: "Comandos",
+    export: "Exportar",
+    exportHint: "Copia un borrador listo para donantes con citas.",
+    exportPreview: "Vista previa",
+    exportFooter: "Consejo: pega en Word/Google Docs y conserva las citas.",
+    copy: "Copiar",
+    close: "Cerrar",
+    whatItIs: "Qué es",
+    corePrinciples: "Principios",
+    notAChatbot: "IDE, no chatbot",
+    overviewTitle: "Un espacio persistente para evidencia, borradores y auditorías",
+    overviewBody: "Recupera primero para inspeccionar pasajes antes de sintetizar. Redacta preguntas de aprendizaje y narrativas con citas explícitas. Aplica reglas de gobernanza para evitar invenciones y declarar incertidumbre cuando falte evidencia.",
+    openWorkbench: "Abrir Workbench",
+    readConcept: "Leer concepto",
+    quickActions: "Acciones rápidas",
+    demoMode: "Modo demo",
+    seedQTitle: "Sembrar pregunta de aprendizaje",
+    seedQDesc: "Inserta una plantilla sólida de pregunta MEAL.",
+    coverageTitle: "Chequeo de cobertura",
+    coverageDesc: "Escanea el borrador y detecta afirmaciones sin cita.",
+    openCopilotTitle: "Abrir Copiloto",
+    openCopilotDesc: "Pregunta con contexto del espacio.",
+    sources: "Fuentes",
+    addMockDoc: "+ Mock",
+    searchDocs: "Buscar documentos",
+    filterYear: "Año",
+    filterTheme: "Tema",
+    all: "Todo",
+    scopeNote: "Acotado a la organización seleccionada.",
+    selectedEvidence: "Evidencia seleccionada",
+    workspace: "Espacio de trabajo",
+    statusReady: "Listo",
+    retrieve: "Recuperar",
+    synthesize: "Sintetizar",
+    qa: "QA",
+    prompt: "Pregunta / prompt",
+    hintRetrieve: "Consejo: recupera primero para inspeccionar pasajes antes de sintetizar.",
+    editor: "Editor",
+    saveDraft: "Guardar borrador",
+    clear: "Limpiar",
+    coverage: "Cobertura",
+    citations: "Citas",
+    uncertainty: "Incertidumbre",
+    conceptHeader: "Notas del concepto",
+    conceptP1: "El Workbench es un IDE para pensamiento MEAL: redactar preguntas, probar evidencia, verificar supuestos, producir borradores listos para donantes y auditar afirmaciones contra fuentes.",
+    conceptL1: "Evidencia primero: las afirmaciones principales requieren citas.",
+    conceptL2: "Gobernanza y trazabilidad: sin inventar, incertidumbre explícita cuando falte evidencia.",
+    conceptL3: "Límites por organización: sin mezclar datos entre organizaciones por defecto.",
+    conceptL4: "Flujos bilingües: inglés y español.",
+    conceptP2: "Este prototipo es local y simula recuperación/síntesis. Integra tu backend RAG para hacerlo real.",
+    evidence: "Evidencia",
+    searchPassages: "Buscar pasajes",
+    audit: "Auditoría",
+    logContradiction: "Registrar contradicción",
+    console: "Consola y tareas",
+    copilot: "Copiloto",
+    contextAware: "Con contexto",
+    hide: "Ocultar",
+    message: "Mensaje",
+    copilotHint: "En modo estricto, el Copiloto requiere evidencia seleccionada.",
+    send: "Enviar",
+    cmdHint: "Escribe para encontrar acciones. Enter para ejecutar. Esc para cerrar.",
+    exportDone: "Exportación copiada al portapapeles.",
+    saved: "Borrador guardado.",
+    cleared: "Limpio.",
+    strictOn: "Gobernanza: Estricta",
+    strictOff: "Gobernanza: Flexible",
+    missingEvidence: "Desconocido: no hay evidencia seleccionada que sustente esta solicitud.",
+    retrievalDone: "Recuperación completada.",
+    synthesisDone: "Síntesis insertada en el editor.",
+    qaDone: "Escaneo QA completado.",
+    contradictionLogged: "Contradicción registrada.",
+    docAdded: "Documento mock agregado.",
+    copilotOpened: "Copiloto abierto.",
+    copilotClosed: "Copiloto oculto.",
+    aboutShown: "Notas del concepto abiertas.",
+    aboutHidden: "Notas del concepto cerradas.",
+  }
+}
+
+const THEMES = ["ToC", "Outcomes", "Indicators", "Qualitative", "Governance", "Gender & Youth", "Climate", "Learning"];
+const state = {
+  lang: "en",
+  org: "Org A",
+  strict: true,
+  docs: [],
+  selectedDocIds: new Set(),
+  passages: [],
+  selectedPassages: new Map(), // key passageId -> passage
+  audit: [],
+  console: [],
+  drafts: {},
+  ui: { aboutOpen: false, copilotOpen: true }
+};
+
+function uid(prefix="id"){ return prefix + "_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16); }
+function now(){ return new Date().toLocaleString(); }
+
+function t(key){
+  const dict = i18n[state.lang] || i18n.en;
+  return dict[key] ?? i18n.en[key] ?? key;
+}
+
+/* -----------------------------
+   DOM helpers
+-------------------------------- */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+function setI18n(){
+  $$("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    el.textContent = t(key);
+  });
+  // Update dynamic badges
+  $("#govBadge").textContent = state.strict ? t("strictOn") : t("strictOff");
+  $("#govBadge").style.borderColor = state.strict ? "rgba(251,191,36,.35)" : "rgba(52,211,153,.35)";
+  $("#govBadge").style.color = state.strict ? "rgba(251,191,36,.95)" : "rgba(52,211,153,.95)";
+  $("#govDot").style.background = state.strict ? "var(--warn)" : "var(--good)";
+
+  // Placeholder text
+  $("#docSearch").placeholder = state.lang === "es" ? "Escribe para filtrar…" : "Type to filter…";
+  $("#passageSearch").placeholder = state.lang === "es" ? "Filtra evidencia…" : "Filter evidence…";
+  $("#query").placeholder = state.lang === "es" ? "Haz una pregunta sobre tu evidencia…" : "Ask a question across your evidence…";
+  $("#editor").placeholder = state.lang === "es" ? "Redacta tu síntesis aquí…" : "Draft your synthesis here…";
+  $("#chatInput").placeholder = state.lang === "es" ? "Pregunta al copiloto…" : "Ask the copilot…";
+  $("#cmdSearch").placeholder = state.lang === "es" ? "Buscar comandos…" : "Search commands…";
+
+  renderChips();
+  renderDocs();
+  renderPassages();
+  renderSelectedEvidence();
+  renderAudit();
+  renderConsole();
+  updateCoverage();
+}
+
+/* -----------------------------
+   Demo corpus (org-specific)
+-------------------------------- */
+function seedCorpus(){
+  const baseDocs = [
+    {
+      id: "doc_annual_2023",
+      title: {en:"Annual Results Report 2023", es:"Reporte de Resultados Anual 2023"},
+      year: 2023,
+      theme: "Outcomes",
+      type: "PDF",
+      program: "Food Security",
+      passages: [
+        {p:"p1", text:{
+          en:"Outcome 1 improved dietary diversity for participating households; 61% met the minimum diversity threshold at endline (vs. 44% baseline).",
+          es:"Resultado 1 mejoró la diversidad dietética; 61% alcanzó el umbral mínimo al final (vs. 44% línea base)."
+        }, page: 14},
+        {p:"p2", text:{
+          en:"Monitoring data show an increase in farmer adoption of composting practices, but attribution remains uncertain due to concurrent partner trainings.",
+          es:"Los datos de monitoreo muestran mayor adopción de compostaje, pero la atribución es incierta por capacitaciones simultáneas de socios."
+        }, page: 22},
+        {p:"p3", text:{
+          en:"Key learning: participatory reflection sessions improved data quality by clarifying indicator definitions across teams.",
+          es:"Aprendizaje clave: sesiones participativas mejoraron la calidad de datos al aclarar definiciones de indicadores."
+        }, page: 31},
+      ]
+    },
+    {
+      id: "doc_mel_matrix_2024",
+      title: {en:"MEL Indicator Reference Sheet (v2)", es:"Matriz de Indicadores MEL (v2)"},
+      year: 2024,
+      theme: "Indicators",
+      type: "XLSX",
+      program: "Cross-cutting",
+      passages: [
+        {p:"p1", text:{
+          en:"Indicator O1.2: % of target households meeting minimum dietary diversity. Definition: at least 5 food groups consumed in previous 24 hours.",
+          es:"Indicador O1.2: % de hogares meta con diversidad dietética mínima. Definición: al menos 5 grupos de alimentos en 24 horas."
+        }, page: 3},
+        {p:"p2", text:{
+          en:"Disaggregation: sex of household head, youth-led household, landscape zone (upper/middle/lower).",
+          es:"Desagregación: sexo de jefatura, hogar liderado por jóvenes, zona del paisaje (alta/media/baja)."
+        }, page: 3},
+        {p:"p3", text:{
+          en:"Data quality rule: major claims in narratives must reference at least one primary source (survey, monitoring log, or evaluation report).",
+          es:"Regla de calidad: las afirmaciones principales deben referenciar al menos una fuente primaria (encuesta, bitácora, o evaluación)."
+        }, page: 1},
+      ]
+    },
+    {
+      id: "doc_toc_2022",
+      title: {en:"Theory of Change (approved)", es:"Teoría de Cambio (aprobada)"},
+      year: 2022,
+      theme: "ToC",
+      type: "DOCX",
+      program: "Food Security",
+      passages: [
+        {p:"p1", text:{
+          en:"If community facilitators deliver inclusive trainings and households adopt climate-resilient practices, then food security will improve, contributing to resilience.",
+          es:"Si facilitadores comunitarios brindan capacitaciones inclusivas y los hogares adoptan prácticas resilientes, entonces mejora la seguridad alimentaria y contribuye a la resiliencia."
+        }, page: 2},
+        {p:"p2", text:{
+          en:"Assumption: local markets remain accessible during the lean season; risk: transport disruptions increase prices.",
+          es:"Supuesto: mercados accesibles en época de escasez; riesgo: interrupciones elevan precios."
+        }, page: 5},
+      ]
+    },
+    {
+      id: "doc_learning_workshop_2024",
+      title: {en:"Participatory Learning Workshop Notes", es:"Notas de Taller de Aprendizaje Participativo"},
+      year: 2024,
+      theme: "Qualitative",
+      type: "MD",
+      program: "Learning",
+      passages: [
+        {p:"p1", text:{
+          en:"Participants reported that clearer roles reduced missing data in monthly monitoring forms.",
+          es:"Participantes reportaron que roles más claros redujeron datos faltantes en formularios mensuales."
+        }, page: 1},
+        {p:"p2", text:{
+          en:"Contradiction flagged: some teams interpret dietary diversity as 4 groups, not 5.",
+          es:"Contradicción: algunos equipos interpretan diversidad dietética como 4 grupos, no 5."
+        }, page: 2},
+      ]
+    },
+    {
+      id: "doc_governance_policy_2025",
+      title: {en:"Evidence & Governance Policy", es:"Política de Evidencia y Gobernanza"},
+      year: 2025,
+      theme: "Governance",
+      type: "PDF",
+      program: "Cross-cutting",
+      passages: [
+        {p:"p1", text:{
+          en:"The system must state uncertainty explicitly when evidence is missing; it must not fabricate numbers or sources.",
+          es:"El sistema debe declarar incertidumbre cuando falte evidencia; no debe inventar números ni fuentes."
+        }, page: 4},
+        {p:"p2", text:{
+          en:"Organization boundaries are enforced: workspaces are isolated by default; cross-organization retrieval requires explicit authorization.",
+          es:"Se aplican límites por organización: espacios aislados por defecto; cruces requieren autorización explícita."
+        }, page: 6},
+      ]
+    },
+  ];
+
+  state.docs = baseDocs;
+  // selected docs default to first two
+  state.selectedDocIds = new Set(["doc_annual_2023", "doc_mel_matrix_2024"]);
+  rebuildPassageIndex();
+}
+
+function rebuildPassageIndex(){
+  const out = [];
+  for(const d of state.docs){
+    for(const pa of d.passages){
+      out.push({
+        id: `${d.id}::${pa.p}`,
+        docId: d.id,
+        docTitle: d.title,
+        year: d.year,
+        theme: d.theme,
+        program: d.program,
+        type: d.type,
+        page: pa.page,
+        text: pa.text
+      });
+    }
+  }
+  state.passages = out;
+}
+
+/* -----------------------------
+   Persistence
+-------------------------------- */
+const STORAGE_KEY = "meal_rag_workbench_proto_v1";
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const saved = JSON.parse(raw);
+    if(saved && typeof saved === "object"){
+      state.lang = saved.lang ?? state.lang;
+      state.org = saved.org ?? state.org;
+      state.strict = saved.strict ?? state.strict;
+      state.selectedDocIds = new Set(saved.selectedDocIds ?? Array.from(state.selectedDocIds));
+      state.selectedPassages = new Map((saved.selectedPassages ?? []).map(x => [x.id, x]));
+      state.audit = saved.audit ?? [];
+      state.console = saved.console ?? [];
+      state.drafts = saved.drafts ?? {};
+      state.ui = saved.ui ?? state.ui;
+    }
+  }catch(e){ /* ignore */ }
+}
+function save(){
+  const payload = {
+    lang: state.lang,
+    org: state.org,
+    strict: state.strict,
+    selectedDocIds: Array.from(state.selectedDocIds),
+    selectedPassages: Array.from(state.selectedPassages.values()),
+    audit: state.audit,
+    console: state.console.slice(-250),
+    drafts: state.drafts,
+    ui: state.ui
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+}
+
+/* -----------------------------
+   Rendering
+-------------------------------- */
+function renderChips(){
+  $("#selectedDocsChip").textContent = `${state.selectedDocIds.size} ${state.lang === "es" ? "docs" : "docs"}`;
+  $("#selectedPassagesChip").textContent = `${state.selectedPassages.size} ${state.lang === "es" ? "pasajes" : "passages"}`;
+  $("#docCount").textContent = state.docs.length;
+}
+
+function renderFilters(){
+  const years = Array.from(new Set(state.docs.map(d => d.year))).sort((a,b)=>b-a);
+  const themes = Array.from(new Set(state.docs.map(d => d.theme))).sort();
+  const yearSel = $("#filterYear");
+  const themeSel = $("#filterTheme");
+  yearSel.innerHTML = `<option value="all">${t("all")}</option>` + years.map(y => `<option value="${y}">${y}</option>`).join("");
+  themeSel.innerHTML = `<option value="all">${t("all")}</option>` + themes.map(th => `<option value="${th}">${th}</option>`).join("");
+}
+
+function docMatchesFilters(doc){
+  const q = $("#docSearch").value.trim().toLowerCase();
+  const y = $("#filterYear").value;
+  const th = $("#filterTheme").value;
+  if(y !== "all" && String(doc.year) !== y) return false;
+  if(th !== "all" && doc.theme !== th) return false;
+
+  if(!q) return true;
+  const title = (doc.title[state.lang] || doc.title.en).toLowerCase();
+  const hay = `${title} ${doc.program} ${doc.type} ${doc.theme} ${doc.year}`.toLowerCase();
+  return hay.includes(q);
+}
+
+function renderDocs(){
+  renderChips();
+  const list = $("#docList");
+  list.innerHTML = "";
+  const docs = state.docs.filter(docMatchesFilters);
+
+  for(const d of docs){
+    const checked = state.selectedDocIds.has(d.id);
+    const el = document.createElement("button");
+    el.className = "w-full text-left panelFlat p-3 hover:bg-white/10 transition";
+    el.innerHTML = `
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <div class="font-semibold text-sm">${escapeHtml(d.title[state.lang] || d.title.en)}</div>
+          <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
+            <span class="chip">${d.type}</span>
+            <span class="chip">${d.year}</span>
+            <span class="chip">${escapeHtml(d.theme)}</span>
+            <span class="chip">${escapeHtml(d.program)}</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="chip ${checked ? "" : "opacity-60"}">${checked ? "✓" : "○"}</span>
+        </div>
+      </div>
+    `;
+    el.addEventListener("click", () => {
+      if(state.selectedDocIds.has(d.id)) state.selectedDocIds.delete(d.id);
+      else state.selectedDocIds.add(d.id);
+      log(`Docs scope updated (${state.selectedDocIds.size} selected).`);
+      renderDocs();
+      renderPassages(); // reflect scope
+      save();
+    });
+    list.appendChild(el);
+  }
+
+  if(docs.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "text-sm text-white/60 p-3";
+    empty.textContent = state.lang === "es" ? "No hay documentos con esos filtros." : "No documents match these filters.";
+    list.appendChild(empty);
+  }
+}
+
+function passageMatches(p){
+  // must be in selected docs scope
+  if(!state.selectedDocIds.has(p.docId)) return false;
+  const q = $("#passageSearch").value.trim().toLowerCase();
+  if(!q) return true;
+  const text = (p.text[state.lang] || p.text.en).toLowerCase();
+  const docTitle = (p.docTitle[state.lang] || p.docTitle.en).toLowerCase();
+  return (text + " " + docTitle).includes(q);
+}
+
+function renderPassages(){
+  renderChips();
+  const list = $("#passageList");
+  list.innerHTML = "";
+
+  const filtered = state.passages.filter(passageMatches);
+  // small ordering: selected first, then by year desc
+  filtered.sort((a,b) => {
+    const sa = state.selectedPassages.has(a.id) ? 1 : 0;
+    const sb = state.selectedPassages.has(b.id) ? 1 : 0;
+    if(sa !== sb) return sb - sa;
+    return b.year - a.year;
+  });
+
+  for(const p of filtered){
+    const selected = state.selectedPassages.has(p.id);
+    const citation = citeLabel(p);
+    const el = document.createElement("div");
+    el.className = "panelFlat p-3";
+    el.innerHTML = `
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <div class="text-xs text-white/60">${escapeHtml(p.docTitle[state.lang] || p.docTitle.en)} • ${p.year} • ${escapeHtml(p.theme)} • p.${p.page}</div>
+          <div class="mt-1 text-sm text-white/80">${escapeHtml((p.text[state.lang] || p.text.en))}</div>
+          <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            <span class="chip mono">${escapeHtml(citation)}</span>
+            <button class="chip hover:bg-white/10 transition" data-action="insert" data-id="${p.id}">${state.lang === "es" ? "Insertar cita" : "Insert citation"}</button>
+            <button class="chip hover:bg-white/10 transition" data-action="pin" data-id="${p.id}">${selected ? (state.lang==="es" ? "Quitar" : "Unselect") : (state.lang==="es" ? "Seleccionar" : "Select")}</button>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="chip ${selected ? "" : "opacity-60"}">${selected ? "✓" : "○"}</span>
+        </div>
+      </div>
+    `;
+
+    el.querySelectorAll("button[data-action]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const action = btn.getAttribute("data-action");
+        const id = btn.getAttribute("data-id");
+        const passage = state.passages.find(x => x.id === id);
+        if(!passage) return;
+
+        if(action === "insert"){
+          insertCitation(passage);
+        }else if(action === "pin"){
+          if(state.selectedPassages.has(id)) state.selectedPassages.delete(id);
+          else state.selectedPassages.set(id, passage);
+          renderPassages();
+          renderSelectedEvidence();
+          updateCoverage();
+          save();
+        }
+      });
+    });
+
+    list.appendChild(el);
+  }
+
+  if(filtered.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "text-sm text-white/60 p-3";
+    empty.textContent = state.lang === "es" ? "No hay evidencia con el alcance actual." : "No evidence in the current scope.";
+    list.appendChild(empty);
+  }
+}
+
+function renderSelectedEvidence(){
+  const box = $("#selectedEvidenceList");
+  box.innerHTML = "";
+  const items = Array.from(state.selectedPassages.values()).slice(0, 12);
+  for(const p of items){
+    const el = document.createElement("div");
+    el.className = "panelFlat p-2 text-xs text-white/70";
+    el.innerHTML = `
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <div class="text-white/60 truncate">${escapeHtml(p.docTitle[state.lang] || p.docTitle.en)} • p.${p.page}</div>
+          <div class="truncate">${escapeHtml((p.text[state.lang] || p.text.en))}</div>
+        </div>
+        <button class="chip hover:bg-white/10 transition" data-remove="${p.id}">×</button>
+      </div>
+    `;
+    el.querySelector("button").addEventListener("click", () => {
+      state.selectedPassages.delete(p.id);
+      renderSelectedEvidence();
+      renderPassages();
+      updateCoverage();
+      save();
+    });
+    box.appendChild(el);
+  }
+  if(state.selectedPassages.size > 12){
+    const more = document.createElement("div");
+    more.className = "text-xs text-white/55";
+    more.textContent = state.lang === "es" ? `+${state.selectedPassages.size-12} más…` : `+${state.selectedPassages.size-12} more…`;
+    box.appendChild(more);
+  }
+}
+
+function renderAudit(){
+  const box = $("#auditLog");
+  box.innerHTML = "";
+  if(state.audit.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "text-sm text-white/60 p-2";
+    empty.textContent = state.lang === "es" ? "Sin registros aún." : "No entries yet.";
+    box.appendChild(empty);
+    return;
+  }
+  for(const a of state.audit.slice(-12).reverse()){
+    const el = document.createElement("div");
+    el.className = "panelFlat p-2 text-xs text-white/70";
+    el.innerHTML = `
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <div class="text-white/60">${escapeHtml(a.time)}</div>
+          <div class="mt-1">${escapeHtml(a.text)}</div>
+        </div>
+        <span class="chip" style="border-color: rgba(251,113,133,.35); color: rgba(251,113,133,.95)">${state.lang==="es"?"Contradicción":"Contradiction"}</span>
+      </div>
+    `;
+    box.appendChild(el);
+  }
+}
+
+function renderConsole(){
+  const box = $("#console");
+  box.innerHTML = state.console.slice(-200).map(line => `<div>${escapeHtml(line)}</div>`).join("");
+  box.scrollTop = box.scrollHeight;
+}
+
+/* -----------------------------
+   Logging + utilities
+-------------------------------- */
+function log(msg){
+  const line = `[${now()}] ${msg}`;
+  state.console.push(line);
+  renderConsole();
+  save();
+}
+
+function escapeHtml(str){
+  return String(str)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function citeLabel(p){
+  // stable-ish citation format for prototype
+  const title = (p.docTitle.en || "").replaceAll(/\s+/g," ").trim();
+  const short = title.length > 28 ? title.slice(0,26) + "…" : title;
+  const doc = short.replaceAll(/[^A-Za-z0-9…]+/g," ");
+  return `${doc} (${p.year}) p.${p.page}`;
+}
+
+function insertCitation(p){
+  const ed = $("#editor");
+  const tag = `cite${p.docId}:${p.page}`;
+  const citation = `\n- ${citeLabel(p)} ${tag}\n`;
+  const selStart = ed.selectionStart ?? ed.value.length;
+  const selEnd = ed.selectionEnd ?? ed.value.length;
+  ed.value = ed.value.slice(0, selStart) + citation + ed.value.slice(selEnd);
+  state.selectedPassages.set(p.id, p);
+  log(`Citation inserted: ${citeLabel(p)}`);
+  renderSelectedEvidence();
+  renderPassages();
+  updateCoverage();
+  save();
+}
+
+/* -----------------------------
+   Retrieval + synthesis (simulated)
+-------------------------------- */
+function tokenize(s){
+  return s.toLowerCase()
+    .replaceAll(/[^a-z0-9áéíóúñü\s]/gi, " ")
+    .split(/\s+/).filter(Boolean)
+    .filter(w => w.length >= 3);
+}
+
+function retrieve(){
+  const q = $("#query").value.trim();
+  if(!q){
+    log(state.lang==="es" ? "Escribe una pregunta para recuperar." : "Type a question to retrieve.");
+    flashStatus(state.lang==="es" ? "Falta pregunta" : "Missing query", "warn");
+    return;
+  }
+  const tokens = tokenize(q);
+  const scored = state.passages
+    .filter(p => state.selectedDocIds.has(p.docId))
+    .map(p => {
+      const text = (p.text[state.lang] || p.text.en).toLowerCase();
+      let score = 0;
+      for(const tk of tokens){
+        if(text.includes(tk)) score += 1;
+      }
+      // small bonus for theme match if query mentions it
+      if(q.toLowerCase().includes(p.theme.toLowerCase())) score += 1;
+      return {p, score};
+    })
+    .filter(x => x.score > 0)
+    .sort((a,b) => b.score - a.score)
+    .slice(0, 8)
+    .map(x => x.p);
+
+  // If nothing matched, pick a few passages as "likely"
+  const results = scored.length ? scored : state.passages.filter(p => state.selectedDocIds.has(p.docId)).slice(0, 4);
+
+  // auto-select retrieved passages (like a staging area)
+  for(const p of results){
+    state.selectedPassages.set(p.id, p);
+  }
+  log(`${t("retrievalDone")} (${results.length} passages).`);
+  flashStatus(t("retrievalDone"), "good");
+  renderSelectedEvidence();
+  renderPassages();
+  updateCoverage();
+  save();
+}
+
+function synthesize(){
+  const q = $("#query").value.trim();
+  if(!q){
+    log(state.lang==="es" ? "Escribe una pregunta para sintetizar." : "Type a question to synthesize.");
+    flashStatus(state.lang==="es" ? "Falta pregunta" : "Missing query", "warn");
+    return;
+  }
+  if(state.strict && state.selectedPassages.size === 0){
+    const msg = t("missingEvidence");
+    log(msg);
+    appendToEditor(`\n\n[UNKNOWN] ${msg}\n`);
+    flashStatus(msg, "bad");
+    updateCoverage();
+    save();
+    return;
+  }
+
+  const selected = Array.from(state.selectedPassages.values()).slice(0, 6);
+  const cites = selected.map(p => `- ${citeLabel(p)} cite${p.docId}:${p.page}`).join("\n");
+
+  const bodyEn = `Synthesis (draft)\n\nQuestion: ${q}\n\nKey findings (from selected evidence):\n${selected.map((p, idx) => `• ${p.text.en} [${idx+1}]`).join("\n")}\n\nNotes on uncertainty:\n• Where attribution is unclear, flag assumptions and propose verification steps.\n\nCitations:\n${cites}\n`;
+
+  const bodyEs = `Síntesis (borrador)\n\nPregunta: ${q}\n\nHallazgos clave (de evidencia seleccionada):\n${selected.map((p, idx) => `• ${p.text.es || p.text.en} [${idx+1}]`).join("\n")}\n\nNotas de incertidumbre:\n• Si la atribución no es clara, declara supuestos y propone pasos de verificación.\n\nCitas:\n${cites}\n`;
+
+  appendToEditor("\n\n" + (state.lang === "es" ? bodyEs : bodyEn));
+  log(t("synthesisDone"));
+  flashStatus(t("synthesisDone"), "good");
+  updateCoverage();
+  save();
+}
+
+function appendToEditor(txt){
+  const ed = $("#editor");
+  ed.value = (ed.value || "") + txt;
+}
+
+/* -----------------------------
+   QA coverage (heuristic)
+-------------------------------- */
+function updateCoverage(){
+  const ed = $("#editor").value || "";
+  const citations = (ed.match(/cite/g) || []).length;
+  const unknowns = (ed.match(/\[UNKNOWN\]/g) || []).length;
+
+  // Heuristic: count bullet lines as claims; count citations as support.
+  const claims = (ed.split("\n").filter(l => l.trim().startsWith("•") || l.trim().startsWith("-")).length) || 0;
+  const denom = Math.max(1, claims);
+  let pct = Math.min(100, Math.round((citations / denom) * 100));
+  // If strict mode, nudge down when there are unknowns
+  if(state.strict && unknowns > 0) pct = Math.max(0, pct - Math.min(40, unknowns*10));
+
+  $("#citationCount").textContent = citations;
+  $("#unknownCount").textContent = unknowns;
+
+  const bar = $("#coverageBar");
+  bar.style.width = pct + "%";
+  if(pct >= 75) bar.style.background = "var(--good)";
+  else if(pct >= 40) bar.style.background = "var(--warn)";
+  else bar.style.background = "var(--bad)";
+  $("#coveragePct").textContent = pct + "%";
+}
+
+function runQA(){
+  updateCoverage();
+  // highlight: add a note to console about uncited claims
+  const ed = $("#editor").value || "";
+  const lines = ed.split("\n");
+  const uncited = lines.filter(l => (l.trim().startsWith("•") || l.trim().startsWith("-")) && !l.includes("cite")).length;
+  log(`${t("qaDone")} ${uncited ? `(${uncited} ${state.lang==="es"?"líneas sin cita":"uncited lines"})` : ""}`.trim());
+  flashStatus(t("qaDone"), uncited ? "warn" : "good");
+  save();
+}
+
+/* -----------------------------
+   Copilot (simulated, governed)
+-------------------------------- */
+function chatMsg(role, text){
+  const box = $("#chat");
+  const wrap = document.createElement("div");
+  wrap.className = "panelFlat p-2";
+  wrap.innerHTML = `
+    <div class="text-xs text-white/60">${escapeHtml(role)} • ${escapeHtml(now())}</div>
+    <div class="mt-1">${escapeHtml(text)}</div>
+  `;
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+}
+
+function copilotRespond(userText){
+  const selected = Array.from(state.selectedPassages.values()).slice(0, 4);
+  if(state.strict && selected.length === 0){
+    chatMsg("Copilot", t("missingEvidence"));
+    log("Copilot blocked by governance: missing evidence.");
+    return;
+  }
+
+  const summary = selected.map((p, i) => `(${i+1}) ${(p.text[state.lang] || p.text.en)}`).join("\n");
+  const cites = selected.map(p => `• ${citeLabel(p)} cite${p.docId}:${p.page}`).join("\n");
+
+  const en = `Working draft:\n\nI can help you structure an answer. Based on the current selected evidence, here are the most relevant excerpts:\n${summary}\n\nSuggested response outline:\n1) Finding\n2) Interpretation (with uncertainty if needed)\n3) Implications for decision-making\n4) Recommended next steps\n\nCitations:\n${cites}`;
+
+  const es = `Borrador de trabajo:\n\nPuedo ayudarte a estructurar una respuesta. Según la evidencia seleccionada, estos son los extractos más relevantes:\n${summary}\n\nEstructura sugerida:\n1) Hallazgo\n2) Interpretación (con incertidumbre si aplica)\n3) Implicaciones para decisiones\n4) Próximos pasos recomendados\n\nCitas:\n${cites}`;
+
+  chatMsg("Copilot", state.lang==="es" ? es : en);
+  log("Copilot drafted a response with citations.");
+}
+
+/* -----------------------------
+   Command palette
+-------------------------------- */
+const commands = [
+  {id:"cmd.retrieve", label:{en:"Retrieve (test evidence)", es:"Recuperar (probar evidencia)"}, run: retrieve},
+  {id:"cmd.synthesize", label:{en:"Synthesize into editor", es:"Sintetizar en el editor"}, run: synthesize},
+  {id:"cmd.qa", label:{en:"Run QA coverage check", es:"Ejecutar QA de cobertura"}, run: runQA},
+  {id:"cmd.seed", label:{en:"Seed learning question template", es:"Sembrar plantilla de pregunta"}, run: seedLearningQuestion},
+  {id:"cmd.export", label:{en:"Export donor-ready draft", es:"Exportar borrador listo"}, run: openExport},
+  {id:"cmd.toggleGov", label:{en:"Toggle governance strict/relaxed", es:"Alternar gobernanza estricta/flexible"}, run: toggleGov},
+  {id:"cmd.toggleLang", label:{en:"Toggle language EN/ES", es:"Alternar idioma EN/ES"}, run: toggleLang},
+  {id:"cmd.addDoc", label:{en:"Add mock document", es:"Agregar documento mock"}, run: addMockDoc},
+  {id:"cmd.openCopilot", label:{en:"Open Copilot", es:"Abrir Copiloto"}, run: () => setCopilot(true)},
+  {id:"cmd.hideCopilot", label:{en:"Hide Copilot", es:"Ocultar Copiloto"}, run: () => setCopilot(false)},
+];
+
+/* -----------------------------
+   UI actions
+-------------------------------- */
+function flashStatus(text, kind="good"){
+  const badge = $("#workspaceStatus");
+  badge.textContent = text;
+  const colors = {
+    good: "border-color: rgba(52,211,153,.35); color: rgba(52,211,153,.95)",
+    warn: "border-color: rgba(251,191,36,.35); color: rgba(251,191,36,.95)",
+    bad:  "border-color: rgba(251,113,133,.35); color: rgba(251,113,133,.95)",
+  };
+  badge.setAttribute("style", (colors[kind] || colors.good) + ";");
+  clearTimeout(flashStatus._t);
+  flashStatus._t = setTimeout(() => {
+    badge.removeAttribute("style");
+    badge.textContent = t("statusReady");
+  }, 2200);
+}
+
+function toggleLang(){
+  state.lang = (state.lang === "en") ? "es" : "en";
+  setI18n();
+  log(`Language set: ${state.lang.toUpperCase()}`);
+  save();
+}
+
+function toggleGov(){
+  state.strict = !state.strict;
+  $("#govBadge").textContent = state.strict ? t("strictOn") : t("strictOff");
+  $("#govDot").style.background = state.strict ? "var(--warn)" : "var(--good)";
+  log(`Governance mode: ${state.strict ? "Strict" : "Relaxed"}`);
+  updateCoverage();
+  save();
+  setI18n(); // refresh badge
+}
+
+function seedLearningQuestion(){
+  const templateEn =
+`Learning Question (template)
+- What changed, for whom, and where?
+- What evidence supports the change (quant + qual)?
+- What assumptions might explain the results?
+- What contradictions or gaps exist?
+- What decision does this learning inform?
+
+Draft:
+• Finding: [insert]
+• Interpretation: [insert]
+• Implications: [insert]
+• Next steps: [insert]
+`;
+  const templateEs =
+`Pregunta de Aprendizaje (plantilla)
+- ¿Qué cambió, para quién y dónde?
+- ¿Qué evidencia sustenta el cambio (cuanti + cuali)?
+- ¿Qué supuestos podrían explicar los resultados?
+- ¿Qué contradicciones o vacíos existen?
+- ¿Qué decisión informa este aprendizaje?
+
+Borrador:
+• Hallazgo: [insertar]
+• Interpretación: [insertar]
+• Implicaciones: [insertar]
+• Próximos pasos: [insertar]
+`;
+  $("#editor").value = ($("#editor").value || "") + "\n\n" + (state.lang==="es" ? templateEs : templateEn);
+  log("Seeded learning question template.");
+  updateCoverage();
+  save();
+}
+
+function addMockDoc(){
+  const year = 2025;
+  const theme = THEMES[Math.floor(Math.random()*THEMES.length)];
+  const id = uid("doc");
+  const doc = {
+    id,
+    title: {en:`Mock Doc — ${theme}`, es:`Doc Mock — ${theme}`},
+    year,
+    theme,
+    type: "PDF",
+    program: "Demo",
+    passages: [
+      {p:"p1", text:{
+        en:`This is a mock passage for ${theme}. Replace with real content from your RAG index.`,
+        es:`Este es un pasaje mock para ${theme}. Reemplaza con contenido real de tu índice RAG.`
+      }, page: 1},
+      {p:"p2", text:{
+        en:"Governance note: major claims should reference a primary source.",
+        es:"Nota de gobernanza: las afirmaciones principales deben referenciar una fuente primaria."
+      }, page: 2},
+    ]
+  };
+  state.docs.unshift(doc);
+  state.selectedDocIds.add(id);
+  rebuildPassageIndex();
+  renderFilters();
+  renderDocs();
+  renderPassages();
+  log(t("docAdded"));
+  flashStatus(t("docAdded"), "good");
+  save();
+}
+
+function clearEvidence(){
+  state.selectedPassages.clear();
+  renderSelectedEvidence();
+  renderPassages();
+  updateCoverage();
+  log("Selected evidence cleared.");
+  save();
+}
+
+function logContradiction(){
+  const hint = state.lang==="es"
+    ? "Describe la contradicción (ej: definiciones distintas del indicador)."
+    : "Describe the contradiction (e.g., differing indicator definitions).";
+  const text = prompt(hint);
+  if(!text) return;
+  state.audit.push({time: now(), text});
+  renderAudit();
+  log(t("contradictionLogged"));
+  flashStatus(t("contradictionLogged"), "warn");
+  save();
+}
+
+function setCopilot(open){
+  state.ui.copilotOpen = open;
+  $("#copilotPanel").style.display = open ? "" : "none";
+  log(open ? t("copilotOpened") : t("copilotClosed"));
+  save();
+}
+
+function toggleAbout(){
+  state.ui.aboutOpen = !state.ui.aboutOpen;
+  $("#about").style.display = state.ui.aboutOpen ? "" : "none";
+  log(state.ui.aboutOpen ? t("aboutShown") : t("aboutHidden"));
+  save();
+}
+
+function openCmd(){
+  $("#cmdOverlay").classList.remove("hidden");
+  $("#cmdSearch").value = "";
+  renderCmdList("");
+  setTimeout(()=>$("#cmdSearch").focus(), 0);
+}
+function closeCmd(){
+  $("#cmdOverlay").classList.add("hidden");
+}
+function renderCmdList(q){
+  const list = $("#cmdList");
+  list.innerHTML = "";
+  const needle = (q||"").toLowerCase().trim();
+  const items = commands
+    .filter(c => (c.label[state.lang] || c.label.en).toLowerCase().includes(needle))
+    .slice(0, 12);
+  for(const c of items){
+    const el = document.createElement("button");
+    el.className = "w-full text-left panelFlat px-3 py-2 hover:bg-white/10 transition";
+    el.innerHTML = `<div class="text-sm font-semibold">${escapeHtml(c.label[state.lang] || c.label.en)}</div>
+                    <div class="text-xs text-white/55">${escapeHtml(c.id)}</div>`;
+    el.addEventListener("click", () => {
+      closeCmd();
+      c.run();
+    });
+    list.appendChild(el);
+  }
+  if(items.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "text-sm text-white/60 p-2";
+    empty.textContent = state.lang==="es" ? "Sin resultados." : "No results.";
+    list.appendChild(empty);
+  }
+}
+function runFirstCmd(){
+  const needle = ($("#cmdSearch").value||"").toLowerCase().trim();
+  const c = commands.find(x => (x.label[state.lang]||x.label.en).toLowerCase().includes(needle)) || commands[0];
+  closeCmd();
+  c.run();
+}
+
+function openExport(){
+  const ed = $("#editor").value || "";
+  $("#exportText").value = ed.trim() ? ed : (state.lang==="es" ? "No hay contenido para exportar." : "No content to export.");
+  $("#exportOverlay").classList.remove("hidden");
+  setTimeout(()=>$("#exportText").focus(), 0);
+}
+function closeExport(){
+  $("#exportOverlay").classList.add("hidden");
+}
+async function copyExport(){
+  try{
+    await navigator.clipboard.writeText($("#exportText").value);
+    log(t("exportDone"));
+    flashStatus(t("exportDone"), "good");
+  }catch(e){
+    // fallback select
+    $("#exportText").select();
+    document.execCommand("copy");
+    log(t("exportDone"));
+    flashStatus(t("exportDone"), "good");
+  }
+}
+
+/* -----------------------------
+   Drafts
+-------------------------------- */
+function saveDraft(){
+  const key = `${state.org}::draft`;
+  state.drafts[key] = $("#editor").value || "";
+  log(t("saved"));
+  flashStatus(t("saved"), "good");
+  save();
+}
+function loadDraft(){
+  const key = `${state.org}::draft`;
+  $("#editor").value = state.drafts[key] || "";
+  updateCoverage();
+}
+function clearDraft(){
+  if(!confirm(state.lang==="es" ? "¿Limpiar el editor?" : "Clear the editor?")) return;
+  $("#editor").value = "";
+  updateCoverage();
+  log(t("cleared"));
+  flashStatus(t("cleared"), "warn");
+  save();
+}
+
+/* -----------------------------
+   Event wiring
+-------------------------------- */
+function wire(){
+  $("#langToggle").addEventListener("click", toggleLang);
+  $("#govToggle").addEventListener("click", toggleGov);
+  $("#cmdBtn").addEventListener("click", openCmd);
+  $("#exportBtn").addEventListener("click", openExport);
+
+  $("#jumpWorkbench").addEventListener("click", () => $("#workbench").scrollIntoView({behavior:"smooth"}));
+  $("#jumpAbout").addEventListener("click", toggleAbout);
+
+  $("#retrieveBtn").addEventListener("click", retrieve);
+  $("#synthBtn").addEventListener("click", synthesize);
+  $("#qaBtn").addEventListener("click", runQA);
+
+  $("#clearEvidenceBtn").addEventListener("click", clearEvidence);
+  $("#contradictionBtn").addEventListener("click", logContradiction);
+
+  $("#clearConsoleBtn").addEventListener("click", () => { state.console = []; renderConsole(); save(); });
+
+  $("#addDocBtn").addEventListener("click", addMockDoc);
+
+  $("#docSearch").addEventListener("input", renderDocs);
+  $("#filterYear").addEventListener("change", renderDocs);
+  $("#filterTheme").addEventListener("change", renderDocs);
+
+  $("#passageSearch").addEventListener("input", renderPassages);
+
+  $("#editor").addEventListener("input", () => { updateCoverage(); save(); });
+  $("#query").addEventListener("keydown", (e) => {
+    if(e.key === "Enter" && (e.ctrlKey || e.metaKey)){
+      e.preventDefault();
+      retrieve();
+    }
+  });
+
+  $("#saveDraftBtn").addEventListener("click", saveDraft);
+  $("#clearDraftBtn").addEventListener("click", clearDraft);
+
+  $("#orgSelect").addEventListener("change", (e) => {
+    state.org = e.target.value;
+    loadDraft();
+    log(`Org set: ${state.org}`);
+    save();
+  });
+
+  // Quick actions
+  $$("[data-action]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const action = btn.getAttribute("data-action");
+      if(action === "seedQuestion") seedLearningQuestion();
+      if(action === "runCoverage") runQA();
+      if(action === "openCopilot") setCopilot(true);
+    });
+  });
+
+  // Copilot
+  $("#sendChatBtn").addEventListener("click", () => {
+    const text = $("#chatInput").value.trim();
+    if(!text) return;
+    chatMsg(state.lang==="es" ? "Usuario" : "User", text);
+    $("#chatInput").value = "";
+    copilotRespond(text);
+    save();
+  });
+  $("#chatInput").addEventListener("keydown", (e) => {
+    if(e.key === "Enter" && (e.ctrlKey || e.metaKey)){
+      e.preventDefault();
+      $("#sendChatBtn").click();
+    }
+  });
+  $("#closeCopilotBtn").addEventListener("click", () => setCopilot(false));
+
+  // Command palette
+  $("#cmdOverlay").addEventListener("click", (e) => {
+    if(e.target === $("#cmdOverlay").children[0]) closeCmd();
+  });
+  $("#cmdSearch").addEventListener("input", (e) => renderCmdList(e.target.value));
+  $("#cmdSearch").addEventListener("keydown", (e) => {
+    if(e.key === "Enter"){ e.preventDefault(); runFirstCmd(); }
+    if(e.key === "Escape"){ e.preventDefault(); closeCmd(); }
+  });
+
+  // Export modal
+  $("#closeExportBtn").addEventListener("click", closeExport);
+  $("#copyExportBtn").addEventListener("click", copyExport);
+  $("#exportOverlay").addEventListener("click", (e) => {
+    if(e.target === $("#exportOverlay").children[0]) closeExport();
+  });
+
+  // Global shortcuts
+  window.addEventListener("keydown", (e) => {
+    const isMac = navigator.platform.toLowerCase().includes("mac");
+    const mod = isMac ? e.metaKey : e.ctrlKey;
+
+    if(mod && e.key.toLowerCase() === "k"){
+      e.preventDefault();
+      $("#cmdOverlay").classList.contains("hidden") ? openCmd() : closeCmd();
+    }
+    if(e.key === "Escape"){
+      if(!$("#cmdOverlay").classList.contains("hidden")) closeCmd();
+      if(!$("#exportOverlay").classList.contains("hidden")) closeExport();
+    }
+    // Ctrl+Enter in editor to synthesize
+    if(mod && e.key === "Enter" && document.activeElement === $("#editor")){
+      e.preventDefault();
+      synthesize();
+    }
+  });
+}
+
+/* -----------------------------
+   Init
+-------------------------------- */
+seedCorpus();
+load();
+renderFilters();
+$("#orgSelect").value = state.org;
+setI18n();
+loadDraft();
+setCopilot(state.ui.copilotOpen);
+log("Workbench loaded (prototype).");
+chatMsg("Copilot", state.lang==="es"
+  ? "Listo. Recupera evidencia primero y luego sintetiza con citas. (Ctrl+K para comandos)"
+  : "Ready. Retrieve evidence first, then synthesize with citations. (Ctrl+K for commands)"
+);
+wire();
+</script>
+</body>
+</html>

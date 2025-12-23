@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEAL RAG Assistant | Intelligent Impact Copilot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                        }
+                    },
+                    backgroundImage: {
+                        'grid-pattern': "radial-gradient(#059669 1px, transparent 1px)",
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Utilities */
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .bg-grid-dots {
+            background-size: 24px 24px;
+            mask-image: linear-gradient(to bottom, transparent, 10% black, 90% black, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, 10% black, 90% black, transparent);
+        }
+
+        /* Chat-specific styles */
+        .chat-container {
+            height: calc(100vh - 180px);
+            min-height: 500px;
+        }
+
+        .message-bubble {
+            max-width: 85%;
+        }
+
+        /* Typing indicator */
+        .typing-dot {
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0);
+            }
+
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        /* Scrollbar styling */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Animation */
+        .fade-in-up {
+            animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass-nav border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-3 group cursor-pointer">
+                    <div
+                        class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                    </div>
+                    <span class="font-display font-bold text-lg text-slate-900 tracking-tight"
+                        data-i18n="brandName">MEAL RAG Assistant</span>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+                        <a href="generator.html" class="hover:text-brand-600 transition-colors flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span data-i18n="navGenerator">Generator</span>
+                        </a>
+                        <a href="indicators.html"
+                            class="hover:text-brand-600 transition-colors flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            <span data-i18n="navIndicators">Indicators</span>
+                        </a>
+                    </div>
+                    <div class="h-5 w-px bg-slate-200 hidden md:block"></div>
+
+                    <button id="lang-toggle"
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-colors">
+                        <span
+                            class="w-4 h-4 rounded-full overflow-hidden border border-slate-300 flex items-center justify-center text-[9px]">🌐</span>
+                        <span id="lang-label">EN</span>
+                    </button>
+
+                    <button id="admin-btn"
+                        class="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-brand-600 transition-colors"
+                        title="Admin Panel">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-20 pb-6 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 chat-container">
+
+                <!-- Sidebar / Controls -->
+                <aside class="lg:col-span-1 space-y-4">
+                    <!-- Organization Selector -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3"
+                            data-i18n="lblContext">Organization Context</label>
+                        <select id="org-selector"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all">
+                            <option value="" data-i18n="optGlobal">Global MEAL Knowledge</option>
+                        </select>
+                    </div>
+
+                    <!-- Focus Mode -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3"
+                            data-i18n="lblMode">Focus Mode</label>
+                        <div class="space-y-2">
+                            <button
+                                class="mode-btn active w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+                                data-mode="general" data-i18n="modeGeneral">
+                                💬 Ask Anything
+                            </button>
+                            <button
+                                class="mode-btn w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+                                data-mode="indicators" data-i18n="modeIndicators">
+                                📊 Design Indicators
+                            </button>
+                            <button
+                                class="mode-btn w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+                                data-mode="toc" data-i18n="modeToc">
+                                🎯 Theory of Change
+                            </button>
+                            <button
+                                class="mode-btn w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+                                data-mode="tools" data-i18n="modeTools">
+                                📝 Surveys & Tools
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Capabilities -->
+                    <div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 text-white">
+                        <label class="block text-xs font-bold text-brand-400 uppercase tracking-wider mb-3"
+                            data-i18n="lblCaps">Capabilities</label>
+                        <ul class="space-y-3 text-sm text-slate-300">
+                            <li class="flex items-start gap-2">
+                                <svg class="w-4 h-4 text-brand-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span data-i18n="cap1">Reads your PDFs & Guides</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <svg class="w-4 h-4 text-brand-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span data-i18n="cap2">Suggests SMART Indicators</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <svg class="w-4 h-4 text-brand-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span data-i18n="cap3">Aligns with MEAL DPro standards</span>
+                            </li>
+                        </ul>
+                    </div>
+                </aside>
+
+                <!-- Chat Interface -->
+                <div
+                    class="lg:col-span-3 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+                    <!-- Chat Header -->
+                    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="font-display font-bold text-lg text-slate-900" data-i18n="chatTitle">Chat
+                                    with your MEAL Copilot</h2>
+                                <p class="text-sm text-slate-500" id="chat-subtitle" data-i18n="chatSub">Currently
+                                    using: Global MEAL Knowledge</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <!-- Export Chat Button -->
+                                <button onclick="exportChatToMarkdown()" title="Export chat to Markdown"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    <span data-i18n="btnExport">.md</span>
+                                </button>
+                                <span
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-semibold">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+                                    Online
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Messages -->
+                    <div id="chat-messages" class="chat-messages flex-1 overflow-y-auto p-6 space-y-4">
+                        <!-- Welcome Message (injected by JS) -->
+                    </div>
+
+                    <!-- Loading Indicator -->
+                    <div id="loading-indicator" class="hidden px-6 pb-4">
+                        <div class="inline-flex items-center gap-1 px-4 py-3 bg-slate-100 rounded-2xl rounded-bl-sm">
+                            <div class="typing-dot w-2 h-2 bg-slate-400 rounded-full"></div>
+                            <div class="typing-dot w-2 h-2 bg-slate-400 rounded-full"></div>
+                            <div class="typing-dot w-2 h-2 bg-slate-400 rounded-full"></div>
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="p-4 border-t border-slate-100 bg-white">
+                        <!-- Quick Prompts -->
+                        <div id="quick-prompts" class="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <form id="chat-form" class="flex gap-3">
+                            <input type="text" id="user-input"
+                                class="flex-1 px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+                                placeholder="Ask a question about your MEAL system..."
+                                data-i18n-placeholder="inputPlaceholder" autocomplete="off">
+                            <button type="submit" id="send-btn"
+                                class="px-5 py-3.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold transition-all shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 flex items-center gap-2">
+                                <span class="hidden sm:inline" data-i18n="sendBtn">Send</span>
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Admin Modal -->
+    <div id="admin-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="toggleModal(false)"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg">
+            <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 p-8 mx-4">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="font-display font-bold text-xl text-slate-900">Knowledge Base Admin</h3>
+                    <button onclick="toggleModal(false)" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                        <svg class="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Create Org -->
+                <div class="mb-6 pb-6 border-b border-slate-100">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Create New Organization</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-org-name"
+                            class="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                            placeholder="e.g., UNICEF">
+                        <button onclick="apiCreateOrg()"
+                            class="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-semibold transition-colors">Create</button>
+                    </div>
+                    <p id="org-msg" class="text-xs text-brand-600 mt-2"></p>
+                </div>
+
+                <!-- Upload Docs -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Upload Document(s)</label>
+                    <select id="upload-scope"
+                        class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        onchange="toggleUploadOrg(this.value)">
+                        <option value="global">Global Knowledge Base</option>
+                        <option value="org">Specific Organization</option>
+                    </select>
+                    <div id="upload-org-wrapper" class="hidden mb-3">
+                        <select id="upload-org-select"
+                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"></select>
+                    </div>
+                    <input type="file" id="file-upload" class="hidden" multiple accept=".pdf">
+                    <div onclick="document.getElementById('file-upload').click()"
+                        class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-brand-400 hover:bg-brand-50/50 transition-all mb-3">
+                        <svg class="w-8 h-8 text-slate-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <span id="file-name-display" class="text-sm text-slate-500">Click to select PDF(s)...</span>
+                    </div>
+                    <button onclick="apiUploadFile()"
+                        class="w-full px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-semibold transition-colors">Upload
+                        & Ingest</button>
+                    <p id="upload-msg" class="text-xs text-brand-600 mt-2"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- TRANSLATIONS ---
+        const i18n = {
+            en: {
+                brandName: "MEAL RAG Assistant",
+                navGenerator: "Generator",
+                navIndicators: "Indicators",
+                lblContext: "Organization Context",
+                optGlobal: "Global MEAL Knowledge",
+                lblMode: "Focus Mode",
+                modeGeneral: "💬 Ask Anything",
+                modeIndicators: "📊 Design Indicators",
+                modeToc: "🎯 Theory of Change",
+                modeTools: "📝 Surveys & Tools",
+                lblCaps: "Capabilities",
+                cap1: "Reads your PDFs & Guides",
+                cap2: "Suggests SMART Indicators",
+                cap3: "Aligns with MEAL DPro standards",
+                chatTitle: "Chat with your MEAL Copilot",
+                chatSub: "Currently using: Global MEAL Knowledge",
+                inputPlaceholder: "Ask a question about your MEAL system...",
+                sendBtn: "Send",
+                welcome: "Hello! I'm your MEAL assistant. I can help you design indicators, review your Theory of Change, or plan data collection tools based on your documents.<br><br><strong>How can I support your work today?</strong>",
+                chips: [
+                    "Summarize our Theory of Change",
+                    "Suggest 3 outcome indicators",
+                    "Create a baseline survey draft"
+                ],
+                errorMsg: "I'm having trouble connecting to the knowledge base. Please try again."
+            },
+            es: {
+                brandName: "Asistente RAG MEAL",
+                navGenerator: "Generador",
+                navIndicators: "Indicadores",
+                lblContext: "Contexto Organizacional",
+                optGlobal: "Conocimiento MEAL Global",
+                lblMode: "Modo de Enfoque",
+                modeGeneral: "💬 Preguntar Algo",
+                modeIndicators: "📊 Diseñar Indicadores",
+                modeToc: "🎯 Teoría de Cambio",
+                modeTools: "📝 Encuestas y Herramientas",
+                lblCaps: "Capacidades",
+                cap1: "Lee tus PDFs y Guías",
+                cap2: "Sugiere Indicadores SMART",
+                cap3: "Alineado a estándares MEAL DPro",
+                chatTitle: "Chatea con tu Copiloto MEAL",
+                chatSub: "Usando actualmente: Conocimiento MEAL Global",
+                inputPlaceholder: "Haz una pregunta sobre tu sistema MEAL...",
+                sendBtn: "Enviar",
+                welcome: "¡Hola! Soy tu asistente MEAL. Puedo ayudarte a diseñar indicadores, revisar tu Teoría de Cambio o planificar herramientas de recolección de datos.<br><br><strong>¿Cómo puedo apoyarte hoy?</strong>",
+                chips: [
+                    "Resume nuestra Teoría de Cambio",
+                    "Sugiere 3 indicadores de resultado",
+                    "Borrador de encuesta de línea base"
+                ],
+                errorMsg: "Tengo problemas conectando con la base de conocimiento. Intenta de nuevo."
+            }
+        };
+
+        // --- STATE ---
+        let currentLang = 'en';
+        let currentOrg = "";
+        let currentMode = 'general';
+        let chatHistoryState = [];
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderInterface();
+            fetchOrgs();
+            addBotMessage(i18n[currentLang].welcome);
+
+            // Event listeners
+            document.getElementById('org-selector').addEventListener('change', handleOrgChange);
+            document.getElementById('chat-form').addEventListener('submit', handleFormSubmit);
+            document.getElementById('admin-btn').addEventListener('click', () => toggleModal(true));
+            document.getElementById('lang-toggle').addEventListener('click', toggleLanguage);
+
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => setMode(btn.dataset.mode, btn));
+            });
+
+            document.getElementById('file-upload').addEventListener('change', function () {
+                const display = document.getElementById('file-name-display');
+                if (this.files.length > 1) {
+                    display.innerText = `${this.files.length} files selected`;
+                } else if (this.files.length === 1) {
+                    display.innerText = this.files[0].name;
+                } else {
+                    display.innerText = "Click to select PDF(s)...";
+                }
+            });
+        });
+
+        // --- LANGUAGE ---
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'es' : 'en';
+            document.getElementById('lang-label').textContent = currentLang.toUpperCase();
+            renderInterface();
+        }
+
+        function renderInterface() {
+            const t = i18n[currentLang];
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.innerHTML = t[key];
+            });
+
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (t[key]) el.placeholder = t[key];
+            });
+
+            // Update chips
+            const chipsContainer = document.getElementById('quick-prompts');
+            chipsContainer.innerHTML = '';
+            t.chips.forEach(text => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'flex-shrink-0 px-4 py-2 bg-slate-100 hover:bg-brand-50 hover:text-brand-700 border border-slate-200 hover:border-brand-200 rounded-full text-sm font-medium text-slate-600 transition-all whitespace-nowrap';
+                btn.innerText = text;
+                btn.onclick = () => usePrompt(text);
+                chipsContainer.appendChild(btn);
+            });
+
+            // Update global option text
+            const globalOpt = document.querySelector('#org-selector option[value=""]');
+            if (globalOpt) globalOpt.text = t.optGlobal;
+        }
+
+        // --- ORG MANAGEMENT ---
+        function handleOrgChange(e) {
+            currentOrg = e.target.value.trim();
+            chatHistoryState = [];
+            document.getElementById('chat-messages').innerHTML = '';
+            addBotMessage(i18n[currentLang].welcome);
+
+            const orgName = e.target.options[e.target.selectedIndex].text;
+            const prefix = currentLang === 'en' ? "Currently using: " : "Usando actualmente: ";
+            document.getElementById('chat-subtitle').innerText = `${prefix}${orgName}`;
+        }
+
+        async function fetchOrgs() {
+            try {
+                const res = await fetch(API_BASE_URL + '/orgs');
+                const data = await res.json();
+                const orgs = data.orgs || [];
+
+                const mainSel = document.getElementById('org-selector');
+                const globalText = i18n[currentLang].optGlobal;
+                mainSel.innerHTML = `<option value="">${globalText}</option>`;
+
+                orgs.forEach(org => {
+                    const opt = document.createElement('option');
+                    opt.value = org;
+                    opt.text = org;
+                    mainSel.appendChild(opt);
+                });
+            } catch (e) {
+                console.error("Could not fetch orgs:", e);
+            }
+        }
+
+        // --- MODE ---
+        function setMode(mode, btnElement) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => {
+                b.classList.remove('active', 'bg-brand-50', 'text-brand-700', 'border-brand-200');
+                b.classList.add('text-slate-600', 'hover:bg-slate-50');
+            });
+            btnElement.classList.add('active', 'bg-brand-50', 'text-brand-700', 'border-brand-200');
+            btnElement.classList.remove('text-slate-600', 'hover:bg-slate-50');
+        }
+
+        // --- CHAT ---
+        function usePrompt(text) {
+            document.getElementById('user-input').value = text;
+            document.getElementById('user-input').focus();
+        }
+
+        function addBotMessage(html) {
+            const container = document.getElementById('chat-messages');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex justify-start fade-in-up';
+            wrapper.innerHTML = `
+                <div class="message-bubble bg-slate-100 text-slate-800 px-5 py-4 rounded-2xl rounded-bl-sm text-sm leading-relaxed">
+                    ${html}
+                </div>
+            `;
+            container.appendChild(wrapper);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addUserMessage(text) {
+            const container = document.getElementById('chat-messages');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex justify-end fade-in-up';
+            wrapper.innerHTML = `
+                <div class="message-bubble bg-slate-900 text-white px-5 py-4 rounded-2xl rounded-br-sm text-sm leading-relaxed">
+                    ${text}
+                </div>
+            `;
+            container.appendChild(wrapper);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('user-input');
+            const question = input.value.trim();
+            if (!question) return;
+
+            addUserMessage(question);
+            input.value = '';
+
+            chatHistoryState.push({ role: 'user', content: question });
+
+            document.getElementById('loading-indicator').classList.remove('hidden');
+
+            try {
+                const res = await fetch(API_BASE_URL + '/rag', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question: question,
+                        org_id: currentOrg || null,
+                        mode: currentMode,
+                        lang: currentLang,
+                        chat_history: chatHistoryState.slice(-6)
+                    })
+                });
+
+                document.getElementById('loading-indicator').classList.add('hidden');
+
+                if (!res.ok) throw new Error('API Error');
+
+                const data = await res.json();
+                addBotMessage(data.answer);
+                chatHistoryState.push({ role: 'assistant', content: data.answer });
+
+            } catch (err) {
+                document.getElementById('loading-indicator').classList.add('hidden');
+                addBotMessage(`<span class="text-red-500">${i18n[currentLang].errorMsg}</span>`);
+            }
+        }
+
+        // --- ADMIN MODAL ---
+        function toggleModal(show) {
+            const modal = document.getElementById('admin-modal');
+            if (show) {
+                modal.classList.remove('hidden');
+                fetchOrgs();
+                populateUploadOrgs();
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function toggleUploadOrg(scope) {
+            const wrapper = document.getElementById('upload-org-wrapper');
+            wrapper.classList.toggle('hidden', scope !== 'org');
+        }
+
+        function populateUploadOrgs() {
+            const mainSelect = document.getElementById('org-selector');
+            const uploadSelect = document.getElementById('upload-org-select');
+            uploadSelect.innerHTML = '';
+
+            Array.from(mainSelect.options).forEach(opt => {
+                if (opt.value !== "") {
+                    const newOpt = document.createElement('option');
+                    newOpt.value = opt.value;
+                    newOpt.text = opt.text;
+                    uploadSelect.appendChild(newOpt);
+                }
+            });
+
+            if (uploadSelect.options.length === 0) {
+                const opt = document.createElement('option');
+                opt.text = "-- No Organizations Created --";
+                opt.value = "NO_ORG";
+                uploadSelect.appendChild(opt);
+            }
+        }
+
+        async function apiCreateOrg() {
+            const nameInput = document.getElementById('new-org-name');
+            const msg = document.getElementById('org-msg');
+            const name = nameInput.value.trim();
+            if (!name) return;
+
+            try {
+                const res = await fetch(API_BASE_URL + '/create-org', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ org_name: name })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    // Check if it's an "already exists" error - show as info, not error
+                    if (data.detail && data.detail.includes('already exists')) {
+                        msg.innerText = "ℹ️ Organization already exists";
+                        msg.className = "text-xs text-slate-500 mt-2";
+                        nameInput.value = "";
+                    } else {
+                        throw new Error(data.detail || "Failed to create");
+                    }
+                } else {
+                    msg.innerText = "✓ Organization created!";
+                    msg.className = "text-xs text-brand-600 mt-2";
+                    nameInput.value = "";
+                    await fetchOrgs();
+                    populateUploadOrgs();
+                }
+            } catch (e) {
+                msg.innerText = "✗ Error: " + e.message;
+                msg.className = "text-xs text-red-500 mt-2";
+            }
+        }
+
+        async function apiUploadFile() {
+            const fileInput = document.getElementById('file-upload');
+            const scope = document.getElementById('upload-scope').value;
+            const orgId = document.getElementById('upload-org-select').value;
+            const msg = document.getElementById('upload-msg');
+            const files = fileInput.files;
+
+            if (files.length === 0) {
+                msg.innerText = "Please select at least one file.";
+                msg.className = "text-xs text-red-500 mt-2";
+                return;
+            }
+
+            // Limit to 10 files at a time
+            if (files.length > 10) {
+                msg.innerText = "Maximum 10 files allowed per upload. Please select fewer files.";
+                msg.className = "text-xs text-red-500 mt-2";
+                return;
+            }
+
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+
+            // Add required scope field
+            formData.append('scope', scope);
+
+            // Add org_id if uploading to a specific organization
+            if (scope === 'org' && orgId && orgId !== 'NO_ORG') {
+                formData.append('org_id', orgId);
+            }
+
+            msg.innerText = `Uploading ${files.length} file(s)...`;
+            msg.className = "text-xs text-slate-500 mt-2";
+
+            try {
+                const res = await fetch(API_BASE_URL + '/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!res.ok) throw new Error('Upload failed');
+
+                const data = await res.json();
+                msg.innerText = `✓ ${data.message || 'Upload successful!'}`;
+                msg.className = "text-xs text-brand-600 mt-2";
+                fileInput.value = '';
+                document.getElementById('file-name-display').innerText = "Click to select PDF(s)...";
+            } catch (e) {
+                msg.innerText = "✗ Error: " + e.message;
+                msg.className = "text-xs text-red-500 mt-2";
+            }
+        }
+
+        // Initialize mode button styles
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            if (btn.classList.contains('active')) {
+                btn.classList.add('bg-brand-50', 'text-brand-700', 'border-brand-200');
+            } else {
+                btn.classList.add('text-slate-600', 'hover:bg-slate-50');
+            }
+        });
+
+        // Export chat to Markdown
+        function exportChatToMarkdown() {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messages = messagesContainer.querySelectorAll('.message-bubble, [class*="rounded-2xl"]');
+
+            if (messages.length === 0) {
+                alert('No messages to export');
+                return;
+            }
+
+            // Get current date for filename
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+
+            // Get organization name
+            const orgName = document.getElementById('org-selector')?.value || 'GLOBAL';
+
+            // Build markdown content
+            let markdown = `# MEAL RAG Chat Export\n\n`;
+            markdown += `**Organization:** ${orgName}\n`;
+            markdown += `**Date:** ${now.toLocaleDateString()} ${now.toLocaleTimeString()}\n\n`;
+            markdown += `---\n\n`;
+
+            // Iterate through chat messages
+            const allChildren = messagesContainer.children;
+            for (const child of allChildren) {
+                // Determine if user or assistant message
+                const isUser = child.classList.contains('flex-row-reverse') ||
+                    child.querySelector('.bg-brand-600') !== null ||
+                    child.innerHTML.includes('bg-brand-600');
+
+                // Get text content (strip HTML but preserve structure)
+                let text = '';
+                const textContainer = child.querySelector('p, .prose, [class*="text-"]');
+                if (textContainer) {
+                    text = textContainer.innerText || textContainer.textContent;
+                } else {
+                    text = child.innerText || child.textContent;
+                }
+
+                text = text.trim();
+                if (!text) continue;
+
+                // Format as markdown
+                if (isUser) {
+                    markdown += `## 👤 User\n\n${text}\n\n`;
+                } else {
+                    markdown += `## 🤖 Assistant\n\n${text}\n\n`;
+                }
+            }
+
+            markdown += `---\n\n*Exported from MEAL RAG Assistant*\n`;
+
+            // Create and download file
+            const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `chat_${orgName}_${dateStr}_${timeStr}.md`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-white py-10 border-t border-slate-800 mt-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                <div>
+                    <h4 class="font-display font-bold text-xl mb-2">MEAL RAG Assistant</h4>
+                    <p class="text-slate-400 text-sm">Empowering organizations with intelligent monitoring solutions.
+                    </p>
+                </div>
+                <div class="flex justify-center space-x-6">
+                    <a href="index.html" class="text-brand-400 text-sm font-medium">Chat</a>
+                    <a href="generator.html"
+                        class="text-slate-400 hover:text-white transition-colors text-sm font-medium">Generator</a>
+                    <a href="indicators.html"
+                        class="text-slate-400 hover:text-white transition-colors text-sm font-medium">Indicators</a>
+                </div>
+                <div class="text-center md:text-right">
+                    <p class="text-slate-500 text-sm">&copy; 2025 MEAL AI Systems. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

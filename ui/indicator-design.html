@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indicator Design | MEAL RAG Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+
+        .step-active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .step-completed {
+            background: #10b981;
+            color: white;
+        }
+
+        .step-pending {
+            background: #e2e8f0;
+            color: #64748b;
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .verdict-pass {
+            background: #dcfce7;
+            border-color: #22c55e;
+            color: #166534;
+        }
+
+        .verdict-revise {
+            background: #fef9c3;
+            border-color: #eab308;
+            color: #854d0e;
+        }
+
+        .verdict-drop {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+
+        .markdown-body h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 1rem 0 0.5rem;
+            color: #059669;
+        }
+
+        .markdown-body h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0.75rem 0 0.25rem;
+            color: #334155;
+        }
+
+        .markdown-body p {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+
+        .markdown-body ul {
+            padding-left: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .markdown-body li {
+            margin-bottom: 0.25rem;
+        }
+
+        .markdown-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.75rem 0;
+            font-size: 0.8rem;
+        }
+
+        .markdown-body th,
+        .markdown-body td {
+            border: 1px solid #e2e8f0;
+            padding: 0.4rem;
+            text-align: left;
+        }
+
+        .markdown-body th {
+            background: #f8fafc;
+            font-weight: 600;
+        }
+
+        .content-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .content-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass-nav border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center gap-3 group">
+                    <div
+                        class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                    </div>
+                    <span class="font-display font-bold text-lg text-slate-900 tracking-tight">MEAL RAG Assistant</span>
+                </a>
+
+                <div class="flex items-center gap-6 text-sm font-medium text-slate-600">
+                    <a href="index.html" class="hover:text-brand-600 transition-colors flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <span data-i18n="navChat">Chat</span>
+                    </a>
+                    <a href="generator.html" class="hover:text-brand-600 transition-colors flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span data-i18n="navGenerator">Generator</span>
+                    </a>
+                    <a href="indicators.html" class="text-brand-600 font-semibold flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <span data-i18n="navIndicators">Indicators</span>
+                    </a>
+                    <div class="h-5 w-px bg-slate-200"></div>
+                    <button id="lang-toggle"
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-colors">
+                        <span
+                            class="w-4 h-4 rounded-full overflow-hidden border border-slate-300 flex items-center justify-center text-[9px]">🌐</span>
+                        <span id="lang-label">EN</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-24 pb-8 px-4 sm:px-6 lg:px-8 min-h-screen">
+        <div class="max-w-6xl mx-auto">
+
+            <!-- Page Header -->
+            <div class="text-center mb-8">
+                <h1 class="font-display text-3xl font-bold text-slate-900 mb-2" data-i18n="pageTitle">📊 Indicator
+                    Design & Fit Check</h1>
+                <p class="text-slate-500 max-w-2xl mx-auto" data-i18n="pageSubtitle">Design SMART indicators from your
+                    Theory of Change and evaluate their feasibility against your organization's data systems.</p>
+            </div>
+
+            <!-- Step Indicator -->
+            <div class="flex justify-center mb-8">
+                <div class="flex items-center gap-2">
+                    <div id="step1-badge"
+                        class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm step-active">1
+                    </div>
+                    <span class="text-sm font-medium text-slate-600 mr-4" data-i18n="step1Label">Configure</span>
+                    <div class="w-12 h-0.5 bg-slate-200"></div>
+                    <div id="step2-badge"
+                        class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm step-pending">2
+                    </div>
+                    <span class="text-sm font-medium text-slate-400 mr-4" data-i18n="step2Label">Design</span>
+                    <div class="w-12 h-0.5 bg-slate-200"></div>
+                    <div id="step3-badge"
+                        class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm step-pending">3
+                    </div>
+                    <span class="text-sm font-medium text-slate-400" data-i18n="step3Label">Fit Check</span>
+                </div>
+            </div>
+
+            <!-- Step 1: Configuration -->
+            <div id="step1-content" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+                <h2 class="font-display font-bold text-xl text-slate-900 mb-4 flex items-center gap-2">
+                    <span
+                        class="w-8 h-8 bg-brand-50 text-brand-600 rounded-lg flex items-center justify-center">⚙️</span>
+                    <span data-i18n="configTitle">Configuration</span>
+                </h2>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Left Column -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                            data-i18n="lblOrg">Organization</label>
+                        <select id="org-selector"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 mb-4">
+                            <option value="">Loading...</option>
+                        </select>
+
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                            data-i18n="lblResultLevel">Result Levels to Cover</label>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <label
+                                class="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm cursor-pointer hover:border-brand-300">
+                                <input type="checkbox" id="level-impact" checked class="w-4 h-4 text-brand-600 rounded">
+                                <span>Impact</span>
+                            </label>
+                            <label
+                                class="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm cursor-pointer hover:border-brand-300">
+                                <input type="checkbox" id="level-outcome" checked
+                                    class="w-4 h-4 text-brand-600 rounded">
+                                <span>Outcome</span>
+                            </label>
+                            <label
+                                class="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm cursor-pointer hover:border-brand-300">
+                                <input type="checkbox" id="level-output" checked class="w-4 h-4 text-brand-600 rounded">
+                                <span>Output</span>
+                            </label>
+                        </div>
+
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                            data-i18n="lblLang">Output Language</label>
+                        <select id="lang-selector"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <option value="es">Español</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                            data-i18n="lblContext">Organizational Context (optional)</label>
+                        <textarea id="context-input" rows="5"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                            placeholder="Describe any constraints, priorities, or specific learning questions..."
+                            data-i18n-placeholder="contextPlaceholder"></textarea>
+
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-4"
+                            data-i18n="lblIndicatorCount">Target Number of Indicators</label>
+                        <input type="number" id="indicator-count" value="6" min="3" max="15"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <button id="generate-btn" onclick="generateIndicators()"
+                        class="px-6 py-3 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/30 transition-all flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <span data-i18n="btnGenerate">Generate Indicators</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Indicator Matrix (hidden initially) -->
+            <div id="step2-content" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-display font-bold text-xl text-slate-900 flex items-center gap-2">
+                        <span
+                            class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">📋</span>
+                        <span data-i18n="matrixTitle">Draft Indicator Matrix</span>
+                    </h2>
+                    <button onclick="runFitCheck()"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span data-i18n="btnFitCheck">Run Fit Check</span>
+                    </button>
+                </div>
+                <div id="matrix-content" class="overflow-x-auto content-scroll max-h-96 markdown-body"></div>
+            </div>
+
+            <!-- Step 3: Fit Check Results (hidden initially) -->
+            <div id="step3-content" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-display font-bold text-xl text-slate-900 flex items-center gap-2">
+                        <span
+                            class="w-8 h-8 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center">✅</span>
+                        <span data-i18n="fitCheckTitle">Fit Check Results</span>
+                    </h2>
+                    <div class="flex gap-2">
+                        <button onclick="downloadResults()"
+                            class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            <span data-i18n="btnDownload">Download</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div id="summary-cards" class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                        <div id="pass-count" class="text-3xl font-bold text-green-700">0</div>
+                        <div class="text-sm text-green-600 font-medium">PASS</div>
+                    </div>
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
+                        <div id="revise-count" class="text-3xl font-bold text-yellow-700">0</div>
+                        <div class="text-sm text-yellow-600 font-medium">REVISE</div>
+                    </div>
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                        <div id="drop-count" class="text-3xl font-bold text-red-700">0</div>
+                        <div class="text-sm text-red-600 font-medium">DROP</div>
+                    </div>
+                </div>
+
+                <div id="fitcheck-content" class="space-y-4 content-scroll max-h-[500px] overflow-y-auto"></div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div id="loading-overlay"
+                class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
+                <div class="bg-white rounded-2xl p-8 shadow-2xl text-center max-w-sm">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-brand-50 flex items-center justify-center">
+                        <svg class="w-8 h-8 text-brand-600 spinner" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </div>
+                    <h3 id="loading-title" class="font-display font-bold text-lg text-slate-900 mb-2">Analyzing...</h3>
+                    <p id="loading-text" class="text-sm text-slate-500">Querying your knowledge base to design
+                        indicators.</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast"
+        class="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl transition-all transform translate-y-20 opacity-0 z-50">
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        // --- TRANSLATIONS ---
+        const i18n = {
+            en: {
+                pageTitle: "📊 Indicator Design & Fit Check",
+                pageSubtitle: "Design SMART indicators from your Theory of Change and evaluate their feasibility against your organization's data systems.",
+                navChat: "Chat",
+                navGenerator: "Generator",
+                navIndicators: "Indicators",
+                step1Label: "Configure",
+                step2Label: "Design",
+                step3Label: "Fit Check",
+                configTitle: "Configuration",
+                lblOrg: "Organization",
+                lblResultLevel: "Result Levels to Cover",
+                lblLang: "Output Language",
+                lblContext: "Organizational Context (optional)",
+                lblIndicatorCount: "Target Number of Indicators",
+                contextPlaceholder: "Describe any constraints, priorities, or specific learning questions...",
+                btnGenerate: "Generate Indicators",
+                btnFitCheck: "Run Fit Check",
+                btnDownload: "Download",
+                matrixTitle: "Draft Indicator Matrix",
+                fitCheckTitle: "Fit Check Results",
+                selectOrg: "-- Select organization --",
+                errorOrg: "⚠️ Please select an organization",
+                loadingDesign: "Designing indicators based on your ToC...",
+                loadingFitCheck: "Evaluating each indicator against your data systems...",
+                successIndicators: "✅ Indicators generated!",
+                successFitCheck: "✅ Fit check complete!"
+            },
+            es: {
+                pageTitle: "📊 Diseño de Indicadores y Verificación",
+                pageSubtitle: "Diseña indicadores SMART desde tu Teoría de Cambio y evalúa su viabilidad contra los sistemas de datos de tu organización.",
+                navChat: "Chat",
+                navGenerator: "Generador",
+                navIndicators: "Indicadores",
+                step1Label: "Configurar",
+                step2Label: "Diseñar",
+                step3Label: "Verificar",
+                configTitle: "Configuración",
+                lblOrg: "Organización",
+                lblResultLevel: "Niveles de Resultado",
+                lblLang: "Idioma de Salida",
+                lblContext: "Contexto Organizacional (opcional)",
+                lblIndicatorCount: "Número de Indicadores",
+                contextPlaceholder: "Describe restricciones, prioridades o preguntas de aprendizaje...",
+                btnGenerate: "Generar Indicadores",
+                btnFitCheck: "Verificar Viabilidad",
+                btnDownload: "Descargar",
+                matrixTitle: "Matriz de Indicadores (Borrador)",
+                fitCheckTitle: "Resultados de Verificación",
+                selectOrg: "-- Selecciona organización --",
+                errorOrg: "⚠️ Por favor selecciona una organización",
+                loadingDesign: "Diseñando indicadores basados en tu TdC...",
+                loadingFitCheck: "Evaluando cada indicador contra tus sistemas...",
+                successIndicators: "✅ ¡Indicadores generados!",
+                successFitCheck: "✅ ¡Verificación completa!"
+            }
+        };
+
+        // --- STATE ---
+        let currentLang = 'en';
+        let generatedMatrix = '';
+        let generatedFitCheck = '';
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchOrganizations();
+            renderInterface();
+            document.getElementById('lang-toggle').addEventListener('click', toggleLanguage);
+        });
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'es' : 'en';
+            document.getElementById('lang-label').textContent = currentLang.toUpperCase();
+            document.getElementById('lang-selector').value = currentLang;
+            renderInterface();
+        }
+
+        function renderInterface() {
+            const t = i18n[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.innerHTML = t[key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (t[key]) el.placeholder = t[key];
+            });
+        }
+
+        async function fetchOrganizations() {
+            const select = document.getElementById('org-selector');
+            const t = i18n[currentLang];
+            try {
+                const res = await fetch(`${API_BASE_URL}/orgs`);
+                const data = await res.json();
+                select.innerHTML = `<option value="">${t.selectOrg}</option>`;
+                (data.orgs || []).forEach(org => {
+                    const opt = document.createElement('option');
+                    opt.value = org;
+                    opt.textContent = org;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                select.innerHTML = '<option value="">Error loading</option>';
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        function showLoading(title, text) {
+            document.getElementById('loading-title').textContent = title;
+            document.getElementById('loading-text').textContent = text;
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        function updateSteps(activeStep) {
+            ['step1', 'step2', 'step3'].forEach((step, idx) => {
+                const badge = document.getElementById(`${step}-badge`);
+                if (idx + 1 < activeStep) {
+                    badge.className = 'w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm step-completed';
+                    badge.innerHTML = '✓';
+                } else if (idx + 1 === activeStep) {
+                    badge.className = 'w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm step-active';
+                    badge.textContent = idx + 1;
+                } else {
+                    badge.className = 'w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm step-pending';
+                    badge.textContent = idx + 1;
+                }
+            });
+        }
+
+        async function generateIndicators() {
+            const orgId = document.getElementById('org-selector').value;
+            const t = i18n[currentLang];
+            if (!orgId) { showToast(t.errorOrg); return; }
+
+            const levels = [];
+            if (document.getElementById('level-impact').checked) levels.push('Impact');
+            if (document.getElementById('level-outcome').checked) levels.push('Outcome');
+            if (document.getElementById('level-output').checked) levels.push('Output');
+
+            const context = document.getElementById('context-input').value;
+            const count = document.getElementById('indicator-count').value;
+            const lang = document.getElementById('lang-selector').value;
+
+            showLoading('Designing Indicators...', t.loadingDesign);
+
+            try {
+                const question = `Design ${count} SMART indicators for ${orgId} covering ${levels.join(', ')} levels. ${context ? 'Additional context: ' + context : ''} Format as a markdown table with columns: ID, Level, Indicator Name, Definition, Data Source, Frequency.`;
+
+                const res = await fetch(`${API_BASE_URL}/rag`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question: question,
+                        org_id: orgId,
+                        mode: 'indicators',
+                        lang: lang,
+                        chat_history: []
+                    })
+                });
+
+                hideLoading();
+                if (!res.ok) throw new Error('API Error');
+
+                const data = await res.json();
+                generatedMatrix = data.answer;
+
+                document.getElementById('matrix-content').innerHTML = marked.parse(generatedMatrix);
+                document.getElementById('step2-content').classList.remove('hidden');
+                updateSteps(2);
+                showToast(t.successIndicators);
+
+            } catch (e) {
+                hideLoading();
+                showToast('❌ Error: ' + e.message);
+            }
+        }
+
+        async function runFitCheck() {
+            const orgId = document.getElementById('org-selector').value;
+            const t = i18n[currentLang];
+            const lang = document.getElementById('lang-selector').value;
+
+            showLoading('Running Fit Check...', t.loadingFitCheck);
+
+            try {
+                const question = `Evaluate each indicator in this matrix for feasibility:\n\n${generatedMatrix}\n\nFor each indicator provide: Verdict (PASS/REVISE/DROP), Rationale (3-5 bullets), Required Changes (if REVISE). Consider: data availability, staff capacity, ethics, cost. Format as structured markdown.`;
+
+                const res = await fetch(`${API_BASE_URL}/rag`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question: question,
+                        org_id: orgId,
+                        mode: 'general',
+                        lang: lang,
+                        chat_history: []
+                    })
+                });
+
+                hideLoading();
+                if (!res.ok) throw new Error('API Error');
+
+                const data = await res.json();
+                generatedFitCheck = data.answer;
+
+                // Parse and display results
+                displayFitCheckResults(generatedFitCheck);
+                document.getElementById('step3-content').classList.remove('hidden');
+                updateSteps(3);
+                showToast(t.successFitCheck);
+
+            } catch (e) {
+                hideLoading();
+                showToast('❌ Error: ' + e.message);
+            }
+        }
+
+        function displayFitCheckResults(content) {
+            const container = document.getElementById('fitcheck-content');
+            container.innerHTML = `<div class="markdown-body">${marked.parse(content)}</div>`;
+
+            // Count verdicts (simple text search)
+            const passCount = (content.match(/PASS/gi) || []).length;
+            const reviseCount = (content.match(/REVISE/gi) || []).length;
+            const dropCount = (content.match(/DROP/gi) || []).length;
+
+            document.getElementById('pass-count').textContent = passCount;
+            document.getElementById('revise-count').textContent = reviseCount;
+            document.getElementById('drop-count').textContent = dropCount;
+        }
+
+        function downloadResults() {
+            const content = `# Indicator Design Report\n\n## Indicator Matrix\n\n${generatedMatrix}\n\n---\n\n## Fit Check Results\n\n${generatedFitCheck}`;
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'indicator_design_report.md';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-white py-10 border-t border-slate-800 mt-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                <div>
+                    <h4 class="font-display font-bold text-xl mb-2">MEAL RAG Assistant</h4>
+                    <p class="text-slate-400 text-sm">Empowering organizations with intelligent monitoring solutions.
+                    </p>
+                </div>
+                <div class="flex justify-center space-x-6">
+                    <a href="index.html"
+                        class="text-slate-400 hover:text-white transition-colors text-sm font-medium">Chat</a>
+                    <a href="generator.html"
+                        class="text-slate-400 hover:text-white transition-colors text-sm font-medium">Generator</a>
+                    <a href="indicators.html" class="text-brand-400 text-sm font-medium">Indicators</a>
+                </div>
+                <div class="text-center md:text-right">
+                    <p class="text-slate-500 text-sm">&copy; 2025 MEAL AI Systems. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indicators Evaluator | MEAL RAG Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .markdown-body h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem;
+            color: #1e40af;
+            border-bottom: 2px solid #dbeafe;
+            padding-bottom: 0.5rem;
+        }
+
+        .markdown-body h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 1rem 0 0.5rem;
+            color: #334155;
+        }
+
+        .markdown-body p {
+            margin-bottom: 0.75rem;
+            line-height: 1.7;
+        }
+
+        .markdown-body ul {
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .markdown-body li {
+            margin-bottom: 0.35rem;
+        }
+
+        .markdown-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+        }
+
+        .markdown-body th,
+        .markdown-body td {
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        .markdown-body th {
+            background: #f1f5f9;
+            font-weight: 600;
+        }
+
+        .markdown-body strong {
+            color: #1e293b;
+        }
+
+        .content-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .content-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .score-excellent {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .score-good {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .score-acceptable {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+
+        .score-weak {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+
+        .score-poor {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass-nav border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center gap-3 group">
+                    <div
+                        class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                    </div>
+                    <span class="font-display font-bold text-lg text-slate-900 tracking-tight">MEAL RAG Assistant</span>
+                </a>
+
+                <div class="flex items-center gap-6 text-sm font-medium text-slate-600">
+                    <a href="index.html" class="hover:text-brand-600 transition-colors flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <span data-i18n="navChat">Chat</span>
+                    </a>
+                    <a href="generator.html" class="hover:text-brand-600 transition-colors flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span data-i18n="navGenerator">Generator</span>
+                    </a>
+                    <a href="indicators.html" class="text-brand-600 font-semibold flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <span data-i18n="navIndicators">Indicators</span>
+                    </a>
+                    <div class="h-5 w-px bg-slate-200"></div>
+                    <button id="lang-toggle"
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-colors">
+                        <span
+                            class="w-4 h-4 rounded-full overflow-hidden border border-slate-300 flex items-center justify-center text-[9px]">🌐</span>
+                        <span id="lang-label">EN</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-24 pb-8 px-4 sm:px-6 lg:px-8 min-h-screen">
+        <div class="max-w-6xl mx-auto">
+
+            <!-- Breadcrumb -->
+            <div class="mb-4">
+                <a href="indicators.html" class="text-sm text-slate-500 hover:text-brand-600 flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span data-i18n="backToIndicators">Back to Indicators</span>
+                </a>
+            </div>
+
+            <!-- Page Header -->
+            <div class="text-center mb-8">
+                <h1 class="font-display text-3xl font-bold text-slate-900 mb-2" data-i18n="pageTitle">🔍 Indicators
+                    Evaluator</h1>
+                <p class="text-slate-500 max-w-2xl mx-auto" data-i18n="pageSubtitle">Evaluate existing indicators
+                    against MEAL/RBM best practices. Get quality scores, improvement recommendations, and PIRS-ready
+                    specifications.</p>
+            </div>
+
+            <!-- Input Section -->
+            <div id="input-section" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+                <h2 class="font-display font-bold text-xl text-slate-900 mb-4 flex items-center gap-2">
+                    <span class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">📝</span>
+                    <span data-i18n="inputTitle">Indicators to Evaluate</span>
+                </h2>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Left Column -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                            data-i18n="lblIndicators">Indicators (one per line or paste a table)</label>
+                        <textarea id="indicators-input" rows="8"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono"
+                            placeholder="1. Number of participants trained&#10;2. % of beneficiaries reporting improved income&#10;3. Number of handwashing stations installed"
+                            data-i18n-placeholder="indicatorsPlaceholder"></textarea>
+
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-4"
+                            data-i18n="lblOrg">Organization (optional)</label>
+                        <select id="org-selector"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">-- No organization --</option>
+                        </select>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                            data-i18n="lblContext">Program Context (optional but recommended)</label>
+                        <textarea id="context-input" rows="6"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            placeholder="Include: objective/result statement, Theory of Change, target population, geography, period, data sources, partners..."
+                            data-i18n-placeholder="contextPlaceholder"></textarea>
+
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-4"
+                            data-i18n="lblLang">Output Language</label>
+                        <select id="lang-selector"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="es">Español</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <button id="evaluate-btn" onclick="evaluateIndicators()"
+                        class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                        <span data-i18n="btnEvaluate">Evaluate Indicators</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Section (hidden initially) -->
+            <div id="results-section" class="hidden">
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-5 gap-3 mb-6">
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm">
+                        <div id="total-count" class="text-2xl font-bold text-slate-700">0</div>
+                        <div class="text-xs text-slate-500 font-medium" data-i18n="lblTotal">Total</div>
+                    </div>
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+                        <div id="excellent-count" class="text-2xl font-bold text-emerald-700">0</div>
+                        <div class="text-xs text-emerald-600 font-medium">3-4</div>
+                    </div>
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                        <div id="good-count" class="text-2xl font-bold text-green-700">0</div>
+                        <div class="text-xs text-green-600 font-medium">2-3</div>
+                    </div>
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
+                        <div id="acceptable-count" class="text-2xl font-bold text-yellow-700">0</div>
+                        <div class="text-xs text-yellow-600 font-medium">1-2</div>
+                    </div>
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                        <div id="poor-count" class="text-2xl font-bold text-red-700">0</div>
+                        <div class="text-xs text-red-600 font-medium">0-1</div>
+                    </div>
+                </div>
+
+                <!-- Evaluation Results -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="font-display font-bold text-xl text-slate-900 flex items-center gap-2">
+                            <span
+                                class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">📊</span>
+                            <span data-i18n="resultsTitle">Evaluation Results</span>
+                        </h2>
+                        <div class="flex gap-2">
+                            <button onclick="downloadReport()"
+                                class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                <span data-i18n="btnDownload">Download Report</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="results-content" class="content-scroll max-h-[600px] overflow-y-auto markdown-body"></div>
+                </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div id="loading-overlay"
+                class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
+                <div class="bg-white rounded-2xl p-8 shadow-2xl text-center max-w-sm">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-50 flex items-center justify-center">
+                        <svg class="w-8 h-8 text-blue-600 spinner" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </div>
+                    <h3 id="loading-title" class="font-display font-bold text-lg text-slate-900 mb-2">Evaluating...</h3>
+                    <p id="loading-text" class="text-sm text-slate-500">Analyzing indicators against MEAL/RBM criteria.
+                        This may take a moment.</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast"
+        class="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl transition-all transform translate-y-20 opacity-0 z-50">
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        // --- TRANSLATIONS ---
+        const i18n = {
+            en: {
+                pageTitle: "🔍 Indicators Evaluator",
+                pageSubtitle: "Evaluate existing indicators against MEAL/RBM best practices. Get quality scores, improvement recommendations, and PIRS-ready specifications.",
+                navChat: "Chat",
+                navGenerator: "Generator",
+                navIndicators: "Indicators",
+                backToIndicators: "Back to Indicators",
+                inputTitle: "Indicators to Evaluate",
+                lblIndicators: "Indicators (one per line or paste a table)",
+                lblOrg: "Organization (optional)",
+                lblContext: "Program Context (optional but recommended)",
+                lblLang: "Output Language",
+                indicatorsPlaceholder: "1. Number of participants trained\n2. % of beneficiaries reporting improved income\n3. Number of handwashing stations installed",
+                contextPlaceholder: "Include: objective/result statement, Theory of Change, target population, geography, period, data sources, partners...",
+                btnEvaluate: "Evaluate Indicators",
+                resultsTitle: "Evaluation Results",
+                btnDownload: "Download Report",
+                lblTotal: "Total",
+                loadingTitle: "Evaluating...",
+                loadingText: "Analyzing indicators against MEAL/RBM criteria. This may take a moment.",
+                errorNoIndicators: "⚠️ Please enter at least one indicator to evaluate",
+                success: "✅ Evaluation complete!"
+            },
+            es: {
+                pageTitle: "🔍 Evaluador de Indicadores",
+                pageSubtitle: "Evalúa indicadores existentes contra mejores prácticas MEAL/RBM. Obtén puntuaciones de calidad, recomendaciones de mejora y fichas tipo PIRS.",
+                navChat: "Chat",
+                navGenerator: "Generador",
+                navIndicators: "Indicadores",
+                backToIndicators: "Volver a Indicadores",
+                inputTitle: "Indicadores a Evaluar",
+                lblIndicators: "Indicadores (uno por línea o pega una tabla)",
+                lblOrg: "Organización (opcional)",
+                lblContext: "Contexto del Programa (opcional pero recomendado)",
+                lblLang: "Idioma de Salida",
+                indicatorsPlaceholder: "1. Número de participantes capacitados\n2. % de beneficiarios que reportan mejora de ingresos\n3. Número de estaciones de lavado de manos instaladas",
+                contextPlaceholder: "Incluye: objetivo/enunciado de resultado, Teoría de Cambio, población meta, geografía, periodo, fuentes de datos, socios...",
+                btnEvaluate: "Evaluar Indicadores",
+                resultsTitle: "Resultados de la Evaluación",
+                btnDownload: "Descargar Reporte",
+                lblTotal: "Total",
+                loadingTitle: "Evaluando...",
+                loadingText: "Analizando indicadores contra criterios MEAL/RBM. Esto puede tomar un momento.",
+                errorNoIndicators: "⚠️ Por favor ingresa al menos un indicador para evaluar",
+                success: "✅ ¡Evaluación completa!"
+            }
+        };
+
+        // --- STATE ---
+        let currentLang = 'en';
+        let evaluationResult = '';
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchOrganizations();
+            renderInterface();
+            document.getElementById('lang-toggle').addEventListener('click', toggleLanguage);
+        });
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'es' : 'en';
+            document.getElementById('lang-label').textContent = currentLang.toUpperCase();
+            document.getElementById('lang-selector').value = currentLang;
+            renderInterface();
+        }
+
+        function renderInterface() {
+            const t = i18n[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.innerHTML = t[key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (t[key]) el.placeholder = t[key];
+            });
+        }
+
+        async function fetchOrganizations() {
+            const select = document.getElementById('org-selector');
+            try {
+                const res = await fetch(`${API_BASE_URL}/orgs`);
+                const data = await res.json();
+                (data.orgs || []).forEach(org => {
+                    const opt = document.createElement('option');
+                    opt.value = org;
+                    opt.textContent = org;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                console.log('Could not load organizations');
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        function showLoading() {
+            const t = i18n[currentLang];
+            document.getElementById('loading-title').textContent = t.loadingTitle;
+            document.getElementById('loading-text').textContent = t.loadingText;
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        async function evaluateIndicators() {
+            const indicators = document.getElementById('indicators-input').value.trim();
+            const t = i18n[currentLang];
+
+            if (!indicators) {
+                showToast(t.errorNoIndicators);
+                return;
+            }
+
+            const context = document.getElementById('context-input').value.trim();
+            const orgId = document.getElementById('org-selector').value;
+            const lang = document.getElementById('lang-selector').value;
+
+            showLoading();
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/evaluate-indicators`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        indicators: indicators,
+                        program_context: context || null,
+                        org_id: orgId || null,
+                        lang: lang
+                    })
+                });
+
+                hideLoading();
+
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.detail || 'API Error');
+                }
+
+                const data = await res.json();
+                evaluationResult = data.evaluation;
+
+                displayResults(evaluationResult);
+                document.getElementById('results-section').classList.remove('hidden');
+                showToast(t.success);
+
+            } catch (e) {
+                hideLoading();
+                showToast('❌ Error: ' + e.message);
+            }
+        }
+
+        function displayResults(content) {
+            const container = document.getElementById('results-content');
+            container.innerHTML = marked.parse(content);
+
+            // Count scores (approximate based on text patterns)
+            const excellentCount = (content.match(/\b(4|excelente|excellent)\b/gi) || []).length;
+            const goodCount = (content.match(/\b(3|bueno|good)\b/gi) || []).length;
+            const acceptableCount = (content.match(/\b(2|aceptable|acceptable)\b/gi) || []).length;
+            const poorCount = (content.match(/\b([01]|deficiente|poor|débil|weak)\b/gi) || []).length;
+
+            // Count indicators more reliably
+            const indicatorMatches = content.match(/### Indicador #\d+|### Indicator #\d+/gi) || [];
+            const totalCount = indicatorMatches.length || 1;
+
+            document.getElementById('total-count').textContent = totalCount;
+            document.getElementById('excellent-count').textContent = Math.min(excellentCount, totalCount);
+            document.getElementById('good-count').textContent = Math.min(goodCount, totalCount);
+            document.getElementById('acceptable-count').textContent = Math.min(acceptableCount, totalCount);
+            document.getElementById('poor-count').textContent = Math.min(poorCount, totalCount);
+        }
+
+        function downloadReport() {
+            const orgId = document.getElementById('org-selector').value || 'evaluation';
+            const content = `# Indicator Evaluation Report\n\n${evaluationResult}`;
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `indicator_evaluation_${orgId}_${new Date().toISOString().split('T')[0]}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-white py-10 border-t border-slate-800 mt-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                <div>
+                    <h4 class="font-display font-bold text-xl mb-2">MEAL RAG Assistant</h4>
+                    <p class="text-slate-400 text-sm">Empowering organizations with intelligent monitoring solutions.
+                    </p>
+                </div>
+                <div class="flex justify-center space-x-6">
+                    <a href="index.html"
+                        class="text-slate-400 hover:text-white transition-colors text-sm font-medium">Chat</a>
+                    <a href="generator.html"
+                        class="text-slate-400 hover:text-white transition-colors text-sm font-medium">Generator</a>
+                    <a href="indicators.html" class="text-brand-400 text-sm font-medium">Indicators</a>
+                </div>
+                <div class="text-center md:text-right">
+                    <p class="text-slate-500 text-sm">&copy; 2025 MEAL AI Systems. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

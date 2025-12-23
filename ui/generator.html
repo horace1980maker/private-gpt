@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Generator | MEAL RAG Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .generator-height {
+            min-height: calc(100vh - 200px);
+        }
+
+        /* Progress animation */
+        .progress-fill {
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            transition: width 0.5s ease;
+        }
+
+        /* Spinner */
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Scrollbar */
+        .preview-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .preview-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .preview-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        /* Markdown styles */
+        .markdown-body h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #1e293b;
+        }
+
+        .markdown-body h2 {
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem;
+            color: #059669;
+        }
+
+        .markdown-body h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 1.25rem 0 0.5rem;
+            color: #334155;
+        }
+
+        .markdown-body p {
+            margin-bottom: 0.75rem;
+            line-height: 1.7;
+        }
+
+        .markdown-body ul,
+        .markdown-body ol {
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .markdown-body li {
+            margin-bottom: 0.35rem;
+        }
+
+        .markdown-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .markdown-body th,
+        .markdown-body td {
+            border: 1px solid #e2e8f0;
+            padding: 0.6rem;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        .markdown-body th {
+            background: #f8fafc;
+            font-weight: 600;
+        }
+
+        .markdown-body strong {
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass-nav border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center gap-3 group">
+                    <div
+                        class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                    </div>
+                    <span class="font-display font-bold text-lg text-slate-900 tracking-tight">MEAL RAG Assistant</span>
+                </a>
+
+                <div class="flex items-center gap-6 text-sm font-medium text-slate-600">
+                    <a href="index.html" class="hover:text-brand-600 transition-colors flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        Chat
+                    </a>
+                    <span class="text-brand-600 font-semibold flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Generator
+                    </span>
+                    <a href="indicators.html" class="hover:text-brand-600 transition-colors flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Indicators
+                    </a>
+                    <div class="h-5 w-px bg-slate-200"></div>
+                    <button id="lang-toggle"
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-colors">
+                        <span
+                            class="w-4 h-4 rounded-full overflow-hidden border border-slate-300 flex items-center justify-center text-[9px]">🌐</span>
+                        <span id="lang-label">EN</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-24 pb-8 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <!-- Page Header -->
+            <div class="text-center mb-8">
+                <h1 class="font-display text-3xl font-bold text-slate-900 mb-2" data-i18n="pageTitle">📄 Document
+                    Generator</h1>
+                <p class="text-slate-500 max-w-xl mx-auto" data-i18n="pageSubtitle">Generate comprehensive strategic
+                    plans, MEAL frameworks, and
+                    Theory of Change documents automatically from your knowledge base.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 generator-height">
+                <!-- Config Panel -->
+                <aside class="lg:col-span-1 space-y-4">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                        <h3 class="font-display font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <span
+                                class="w-8 h-8 bg-brand-50 text-brand-600 rounded-lg flex items-center justify-center">⚙️</span>
+                            <span data-i18n="configTitle">Configuration</span>
+                        </h3>
+
+                        <!-- Organization -->
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                                data-i18n="lblOrg">Organization</label>
+                            <div class="flex gap-2">
+                                <select id="org-selector"
+                                    class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                    <option value="">Loading...</option>
+                                </select>
+                                <button type="button" onclick="checkInventory()"
+                                    class="p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors border border-slate-200"
+                                    title="Check available documents">
+                                    📋
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Document Type -->
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                                data-i18n="lblDocType">Document Type</label>
+                            <div id="doc-type-grid" class="space-y-2">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Year -->
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                                data-i18n="lblYear">Year</label>
+                            <input type="number" id="year-input" value="2026" min="2024" max="2030"
+                                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        </div>
+
+                        <!-- Language -->
+                        <div class="mb-5">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
+                                data-i18n="lblLang">Language</label>
+                            <select id="lang-selector"
+                                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                <option value="es">Español</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+
+                        <!-- Generate Button -->
+                        <button id="generate-btn" onclick="generateDocument()"
+                            class="w-full px-4 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            <span data-i18n="btnGenerate">Generate Document</span>
+                        </button>
+
+                        <!-- Stop Button (hidden by default) -->
+                        <button id="stop-btn" onclick="stopGeneration()"
+                            class="hidden w-full px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-all shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 mt-2">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                            </svg>
+                            <span data-i18n="btnStop">Stop Generation</span>
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- Output Panel -->
+                <div
+                    class="lg:col-span-3 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+                    <!-- Header -->
+                    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                        <h2 id="output-title" class="font-display font-bold text-lg text-slate-900"
+                            data-i18n="outputTitle">Generated Document</h2>
+                        <div id="output-actions" class="hidden flex items-center gap-2">
+                            <button onclick="copyToClipboard()"
+                                class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                                <span data-i18n="btnCopy">Copy</span>
+                            </button>
+                            <button onclick="downloadDocument()"
+                                class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                <span data-i18n="btnDownload">Download .md</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="empty-state" class="flex-1 flex flex-col items-center justify-center text-center p-8">
+                        <div class="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
+                            <svg class="w-10 h-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <h3 class="font-display font-bold text-slate-900 mb-1" data-i18n="emptyTitle">No Document Yet
+                        </h3>
+                        <p class="text-sm text-slate-500 max-w-xs" data-i18n="emptyDesc">Select an organization and
+                            document type, then click
+                            "Generate Document" to begin.</p>
+                    </div>
+
+                    <!-- Progress Section -->
+                    <div id="progress-section" class="hidden flex-1 p-6 flex flex-col">
+                        <div class="mb-6">
+                            <div class="flex justify-between text-sm mb-2">
+                                <span id="progress-text" class="text-slate-600 font-medium">Preparing...</span>
+                                <span id="progress-percent" class="text-brand-600 font-bold">0%</span>
+                            </div>
+                            <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div id="progress-fill" class="progress-fill h-full rounded-full" style="width: 0%">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="section-list" class="flex-1 overflow-y-auto space-y-2">
+                            <!-- Section items populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Document Preview -->
+                    <div id="document-preview" class="hidden flex-1 overflow-y-auto p-6 preview-scroll">
+                        <div id="document-content" class="markdown-body text-sm text-slate-700">
+                            <!-- Rendered markdown -->
+                        </div>
+                    </div>
+
+                    <!-- HECO Results Polar Chart -->
+                    <div id="polar-chart-section" class="hidden flex-1 p-4 flex flex-col overflow-auto">
+                        <div class="flex flex-col items-center justify-center">
+                            <div class="w-full max-w-5xl" style="height: 700px;">
+                                <canvas id="heco-polar-chart"></canvas>
+                            </div>
+                            <div id="heco-stats" class="mt-2 text-center text-sm text-slate-600">
+                                <!-- Stats populated by JS -->
+                            </div>
+                            <div class="mt-3 flex justify-center gap-3">
+                                <button onclick="downloadPolarChart()"
+                                    class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    Descargar PNG
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metadata Bar -->
+                    <div id="metadata-bar"
+                        class="hidden px-6 py-3 bg-slate-50 border-t border-slate-100 flex flex-wrap gap-4 text-xs text-slate-500">
+                        <span class="flex items-center gap-1">📁 <strong class="text-slate-700"
+                                id="meta-org">-</strong></span>
+                        <span class="flex items-center gap-1">📄 <strong class="text-slate-700"
+                                id="meta-type">-</strong></span>
+                        <span class="flex items-center gap-1">📊 <strong class="text-slate-700"
+                                id="meta-sections">-</strong> sections</span>
+                        <span class="flex items-center gap-1">📝 <strong class="text-slate-700"
+                                id="meta-chars">-</strong> chars</span>
+                        <span id="meta-tokens-container" class="hidden flex items-center gap-1">💰 <strong
+                                class="text-slate-700" id="meta-tokens">-</strong> tokens</span>
+                        <span id="meta-cost-container" class="hidden flex items-center gap-1">💵 <strong
+                                class="text-slate-700" id="meta-cost">-</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-white py-10 border-t border-slate-800 mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                <div>
+                    <h4 class="font-display font-bold text-xl mb-2">MEAL RAG Assistant</h4>
+                    <p class="text-slate-400 text-sm">Empowering organizations with intelligent monitoring solutions.
+                    </p>
+                </div>
+                <div class="flex justify-center space-x-6">
+                    <a href="index.html"
+                        class="text-slate-400 hover:text-white transition-colors text-sm font-medium">Chat</a>
+                    <a href="generator.html" class="text-brand-400 text-sm font-medium">Generator</a>
+                    <a href="indicators.html"
+                        class="text-slate-400 hover:text-white transition-colors text-sm font-medium">Indicators</a>
+                </div>
+                <div class="text-center md:text-right">
+                    <p class="text-slate-500 text-sm">&copy; 2025 MEAL AI Systems. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast -->
+    <div id="toast"
+        class="fixed bottom-6 right-6 px-5 py-3 bg-slate-900 text-white rounded-xl shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 text-sm font-medium z-50">
+    </div>
+
+    <!-- Marked.js for Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Chart.js for Polar Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000';
+        let selectedDocType = 'strategic_plan';
+        let generatedDocument = null;
+        let generatedMetadata = null;
+        let currentAbortController = null;
+        let currentProgressInterval = null;
+
+        const docTypes = {
+            strategic_plan: { name: 'Plan Estratégico', icon: '📋', sections: 10 },
+            meal_plan: { name: 'Plan MEAL', icon: '📊', sections: 6 },
+            theory_of_change: { name: 'Teoría de Cambio', icon: '🔄', sections: 6 },
+            heco_v2: { name: 'Diagnóstico Inicial', icon: '🏢', sections: 8, isEvaluation: true },
+            doc_review: { name: 'Revisión Documental', icon: '📑', sections: 17 },
+            meal_diagnostic: { name: 'Diagnóstico MEAL', icon: '🎯', sections: 13 },
+            heco_results: { name: 'Resultados HECO v2', icon: '📈', sections: 8, isVisualization: true }
+        };
+
+        const sectionNames = {
+            strategic_plan: ['Contexto y Antecedentes', 'Identidad Organizacional', 'Ejes Estratégicos', 'Modelo de Intervención', 'Programas y Proyectos', 'Población Beneficiaria', 'Indicadores y Resultados', 'Desafíos y Oportunidades', 'Alianzas y Articulación', 'Sistema MEAL'],
+            meal_plan: ['Resumen del Sistema MEAL', 'Teoría de Cambio y Marco Lógico', 'Matriz de Indicadores', 'Métodos de Recolección', 'Reportes y Rendición de Cuentas', 'Aprendizaje y Gestión del Conocimiento'],
+            theory_of_change: ['Análisis del Problema', 'Declaración de Impacto', 'Resultados y Cambios Esperados', 'Estrategias e Intervenciones', 'Supuestos y Riesgos', 'Evidencia y Base de Conocimiento'],
+            heco_v2: ['D1: Gobernanza y Liderazgo', 'D2: Planificación Estratégica', 'D3: Programas e Impacto', 'D4: Finanzas y Sostenibilidad', 'D5: Relaciones Externas', 'D6: Operaciones y Personal', 'D7: Productos y Comunicación', 'D8: Capacidad Sucesional'],
+            doc_review: ['Portada y Ficha Técnica', 'Resumen Ejecutivo', 'Propósito y Alcance', 'Metodología', 'Inventario Documental', 'Identidad Institucional', 'Contexto y Problemas', 'Población Meta', 'Teoría de Cambio', 'Portafolio de Programas', 'Gobernanza', 'Recursos Humanos', 'Finanzas', 'Sistemas y MEAL', 'Hallazgos Integrados', 'Recomendaciones', 'Preguntas Abiertas'],
+            meal_diagnostic: ['Fase 1A: Base Documental', 'Fase 1B: MEAL - Marco Resultados', 'Fase 1C: MEAL - Herramientas', 'Fase 1D: MEAL - Evaluación', 'Fase 1E: MEAL - Accountability', 'Fase 2A: Planificación - Identidad', 'Fase 2B: Planificación - Objetivos', 'Fase 2C: Planificación - Riesgos', 'Fase 2D: Análisis de Brechas', 'Fase 3A: Hoja de Ruta', 'Fase 3B: Recomendaciones MEAL', 'Fase 3C: Recomendaciones Planificación', 'Fase 3D: Agenda Validación']
+        };
+
+        // --- TRANSLATIONS ---
+        const i18n = {
+            en: {
+                pageTitle: "📄 Document Generator",
+                pageSubtitle: "Generate comprehensive strategic plans, MEAL frameworks, and Theory of Change documents automatically from your knowledge base.",
+                configTitle: "Configuration",
+                lblOrg: "Organization",
+                lblDocType: "Document Type",
+                lblYear: "Year",
+                lblLang: "Language",
+                btnGenerate: "Generate Document",
+                btnGenerating: "Generating...",
+                btnStop: "Stop Generation",
+                outputTitle: "Generated Document",
+                btnCopy: "Copy",
+                btnDownload: "Download .md",
+                emptyTitle: "No Document Yet",
+                emptyDesc: "Select an organization and document type, then click \"Generate Document\" to begin.",
+                selectOrg: "-- Select organization --",
+                errorOrg: "⚠️ Please select an organization",
+                successMsg: "✅ Document generated successfully!",
+                processingSection: "Processing section",
+                of: "of",
+                complete: "Complete!",
+                sections: "sections",
+                docTypes: {
+                    strategic_plan: { name: 'Strategic Plan', icon: '📋', sections: 10 },
+                    meal_plan: { name: 'MEAL Plan', icon: '📊', sections: 6 },
+                    theory_of_change: { name: 'Theory of Change', icon: '🔄', sections: 6 },
+                    heco_v2: { name: 'Initial Diagnostic', icon: '🏢', sections: 8, isEvaluation: true },
+                    doc_review: { name: 'Document Review', icon: '📑', sections: 17 },
+                    meal_diagnostic: { name: 'MEAL Diagnostic', icon: '🎯', sections: 13 },
+                    heco_results: { name: 'HECO v2 Results', icon: '📈', sections: 8, isVisualization: true }
+                },
+                sectionNames: {
+                    strategic_plan: ['Context & Background', 'Organizational Identity', 'Strategic Axes', 'Intervention Model', 'Programs & Projects', 'Target Population', 'Indicators & Results', 'Challenges & Opportunities', 'Partnerships', 'MEAL System'],
+                    meal_plan: ['MEAL System Overview', 'Theory of Change & LogFrame', 'Indicator Matrix', 'Data Collection Methods', 'Reporting & Accountability', 'Learning & Knowledge Management'],
+                    theory_of_change: ['Problem Analysis', 'Impact Statement', 'Expected Results & Changes', 'Strategies & Interventions', 'Assumptions & Risks', 'Evidence Base'],
+                    heco_v2: ['D1: Governance & Leadership', 'D2: Strategic Planning', 'D3: Programs & Impact', 'D4: Finance & Sustainability', 'D5: External Relations', 'D6: Operations & Staff', 'D7: Products & Communication', 'D8: Succession Capacity'],
+                    doc_review: ['Cover Sheet', 'Executive Summary', 'Purpose & Scope', 'Methodology', 'Document Inventory', 'Institutional Identity', 'Context & Problems', 'Target Population', 'Theory of Change', 'Program Portfolio', 'Governance', 'Human Resources', 'Finance', 'Systems & MEAL', 'Integrated Findings', 'Recommendations', 'Open Questions'],
+                    meal_diagnostic: ['Phase 1A: Document Base', 'Phase 1B: MEAL - Results Framework', 'Phase 1C: MEAL - Tools', 'Phase 1D: MEAL - Evaluation', 'Phase 1E: MEAL - Accountability', 'Phase 2A: Planning - Identity', 'Phase 2B: Planning - Objectives', 'Phase 2C: Planning - Risks', 'Phase 2D: Gap Analysis', 'Phase 3A: Roadmap', 'Phase 3B: MEAL Recommendations', 'Phase 3C: Planning Recommendations', 'Phase 3D: Validation Agenda']
+                }
+            },
+            es: {
+                pageTitle: "📄 Generador de Documentos",
+                pageSubtitle: "Genera planes estratégicos, marcos MEAL y documentos de Teoría de Cambio automáticamente desde tu base de conocimientos.",
+                configTitle: "Configuración",
+                lblOrg: "Organización",
+                lblDocType: "Tipo de Documento",
+                lblYear: "Año",
+                lblLang: "Idioma",
+                btnGenerate: "Generar Documento",
+                btnGenerating: "Generando...",
+                btnStop: "Detener Generación",
+                outputTitle: "Documento Generado",
+                btnCopy: "Copiar",
+                btnDownload: "Descargar .md",
+                emptyTitle: "Sin Documento Aún",
+                emptyDesc: "Selecciona una organización y tipo de documento, luego haz clic en \"Generar Documento\" para comenzar.",
+                selectOrg: "-- Selecciona organización --",
+                errorOrg: "⚠️ Por favor selecciona una organización",
+                successMsg: "✅ ¡Documento generado exitosamente!",
+                processingSection: "Procesando sección",
+                of: "de",
+                complete: "¡Completo!",
+                sections: "secciones",
+                docTypes: {
+                    strategic_plan: { name: 'Plan Estratégico', icon: '📋', sections: 10 },
+                    meal_plan: { name: 'Plan MEAL', icon: '📊', sections: 6 },
+                    theory_of_change: { name: 'Teoría de Cambio', icon: '🔄', sections: 6 },
+                    heco_v2: { name: 'Diagnóstico Inicial', icon: '🏢', sections: 8, isEvaluation: true },
+                    doc_review: { name: 'Revisión Documental', icon: '📑', sections: 17 },
+                    meal_diagnostic: { name: 'Diagnóstico MEAL', icon: '🎯', sections: 13 },
+                    heco_results: { name: 'Resultados HECO v2', icon: '📈', sections: 8, isVisualization: true }
+                },
+                sectionNames: {
+                    strategic_plan: ['Contexto y Antecedentes', 'Identidad Organizacional', 'Ejes Estratégicos', 'Modelo de Intervención', 'Programas y Proyectos', 'Población Beneficiaria', 'Indicadores y Resultados', 'Desafíos y Oportunidades', 'Alianzas y Articulación', 'Sistema MEAL'],
+                    meal_plan: ['Resumen del Sistema MEAL', 'Teoría de Cambio y Marco Lógico', 'Matriz de Indicadores', 'Métodos de Recolección', 'Reportes y Rendición de Cuentas', 'Aprendizaje y Gestión del Conocimiento'],
+                    theory_of_change: ['Análisis del Problema', 'Declaración de Impacto', 'Resultados y Cambios Esperados', 'Estrategias e Intervenciones', 'Supuestos y Riesgos', 'Evidencia y Base de Conocimiento'],
+                    heco_v2: ['D1: Gobernanza y Liderazgo', 'D2: Planificación Estratégica', 'D3: Programas e Impacto', 'D4: Finanzas y Sostenibilidad', 'D5: Relaciones Externas', 'D6: Operaciones y Personal', 'D7: Productos y Comunicación', 'D8: Capacidad Sucesional'],
+                    doc_review: ['Portada', 'Resumen Ejecutivo', 'Propósito y Alcance', 'Metodología', 'Inventario Documental', 'Identidad Institucional', 'Contexto y Problemas', 'Población Meta', 'Teoría de Cambio', 'Portafolio de Programas', 'Gobernanza', 'Recursos Humanos', 'Finanzas', 'Sistemas y MEAL', 'Hallazgos Integrados', 'Recomendaciones', 'Preguntas Abiertas'],
+                    meal_diagnostic: ['Fase 1A: Base Documental', 'Fase 1B: MEAL - Marco Resultados', 'Fase 1C: MEAL - Herramientas', 'Fase 1D: MEAL - Evaluación', 'Fase 1E: MEAL - Accountability', 'Fase 2A: Planificación - Identidad', 'Fase 2B: Planificación - Objetivos', 'Fase 2C: Planificación - Riesgos', 'Fase 2D: Análisis de Brechas', 'Fase 3A: Hoja de Ruta', 'Fase 3B: Recomendaciones MEAL', 'Fase 3C: Recomendaciones Planificación', 'Fase 3D: Agenda Validación']
+                }
+            }
+        };
+
+        let currentLang = 'en';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchOrganizations();
+            renderDocTypeCards();
+            renderInterface();
+
+            // Language toggle
+            document.getElementById('lang-toggle').addEventListener('click', toggleLanguage);
+        });
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'es' : 'en';
+            document.getElementById('lang-label').textContent = currentLang.toUpperCase();
+            document.getElementById('lang-selector').value = currentLang;
+            renderInterface();
+            renderDocTypeCards();
+        }
+
+        async function checkInventory() {
+            const orgId = document.getElementById('org-selector').value;
+            if (!orgId) { showToast('Please select an organization first'); return; }
+
+            try {
+                const btn = document.querySelector('button[onclick="checkInventory()"]');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = `<svg class="w-5 h-5 animate-spin mx-auto text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m0 14v1m8-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707" /></svg>`;
+                btn.disabled = true;
+
+                const res = await fetch(`${API_BASE_URL}/inventory/${orgId}`);
+                if (!res.ok) throw new Error('API Error');
+                const data = await res.json();
+
+                if (data.files && data.files.length > 0) {
+                    // Render in Output Panel
+                    const contentDiv = document.getElementById('document-content');
+                    let html = `<h1 style="color: #2563EB;">📁 Document Inventory</h1>`;
+                    html += `<p class="text-slate-600 mb-4"><strong>Organization:</strong> ${orgId} <br><strong>Scan Date:</strong> ${new Date().toLocaleString()}</p>`;
+                    html += `<hr class="my-4 border-slate-200">`;
+                    html += `<h3 class="font-bold text-lg mb-2">✅ Found ${data.count} files available:</h3>`;
+                    html += `<ul class="list-disc pl-5 space-y-1 text-slate-700">`;
+                    data.files.forEach(f => html += `<li>${f}</li>`);
+                    html += `</ul>`;
+
+                    contentDiv.innerHTML = html;
+
+                    // Toggle Views
+                    document.getElementById('empty-state').classList.add('hidden');
+                    document.getElementById('progress-section').classList.add('hidden');
+                    document.getElementById('polar-chart-section').classList.add('hidden');
+                    document.getElementById('document-preview').classList.remove('hidden');
+                    document.getElementById('output-actions').classList.remove('hidden');
+
+                    // Hide metadata bar as not relevant
+                    document.getElementById('metadata-bar').classList.add('hidden');
+
+                } else {
+                    alert(`⚠️ No documents found for ${orgId}.\nCheck the 'kb/orgs/${orgId}' folder.`);
+                }
+
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            } catch (e) {
+                showToast('Error checking inventory: ' + e.message);
+                const btn = document.querySelector('button[onclick="checkInventory()"]');
+                if (btn) {
+                    btn.innerHTML = '📋';
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        function renderInterface() {
+            const t = i18n[currentLang];
+
+            // Update all elements with data-i18n attribute
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.innerHTML = t[key];
+            });
+
+            // Update org selector placeholder
+            const orgSelect = document.getElementById('org-selector');
+            if (orgSelect.options[0] && orgSelect.options[0].value === '') {
+                orgSelect.options[0].text = t.selectOrg;
+            }
+        }
+
+        async function fetchOrganizations() {
+            const select = document.getElementById('org-selector');
+            const t = i18n[currentLang];
+            try {
+                const res = await fetch(`${API_BASE_URL}/orgs`);
+                const data = await res.json();
+                select.innerHTML = `<option value="">${t.selectOrg}</option>`;
+                (data.orgs || []).forEach(org => {
+                    const opt = document.createElement('option');
+                    opt.value = org;
+                    opt.textContent = org;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                select.innerHTML = '<option value="">Error loading</option>';
+            }
+        }
+
+        function renderDocTypeCards() {
+            const grid = document.getElementById('doc-type-grid');
+            const t = i18n[currentLang];
+            grid.innerHTML = '';
+            Object.entries(t.docTypes).forEach(([key, config]) => {
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = `w-full text-left p-3 rounded-xl border-2 transition-all ${key === selectedDocType ? 'border-brand-500 bg-brand-50' : 'border-slate-200 hover:border-brand-300 bg-white'}`;
+                card.onclick = () => { selectedDocType = key; renderDocTypeCards(); };
+                card.innerHTML = `
+                    <div class="font-semibold text-sm text-slate-800">${config.icon} ${config.name}</div>
+                    <div class="text-xs text-slate-500 mt-0.5">${config.sections} ${t.sections}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function generateDocument() {
+            const orgId = document.getElementById('org-selector').value;
+            const year = document.getElementById('year-input').value;
+            const lang = document.getElementById('lang-selector').value;
+            const t = i18n[currentLang];
+
+            if (!orgId) { showToast(t.errorOrg); return; }
+
+            // Handle HECO Results visualization type
+            const docConfig = t.docTypes[selectedDocType] || docTypes[selectedDocType];
+            if (docConfig && docConfig.isVisualization) {
+                document.getElementById('polar-chart-section').classList.remove('hidden');
+                loadHecoResults();
+                return;
+            }
+
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('document-preview').classList.add('hidden');
+            document.getElementById('progress-section').classList.remove('hidden');
+            document.getElementById('output-actions').classList.add('hidden');
+            document.getElementById('metadata-bar').classList.add('hidden');
+
+            const btn = document.getElementById('generate-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="w-5 h-5 spinner" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> ${t.btnGenerating}`;
+            stopBtn.classList.remove('hidden');
+
+            // Create AbortController for this request
+            currentAbortController = new AbortController();
+
+            // Generate Request ID for progress tracking
+            const requestId = 'req_' + Math.random().toString(36).substr(2, 9);
+
+            const sections = t.sectionNames[selectedDocType] || [];
+            const sectionList = document.getElementById('section-list');
+            sectionList.innerHTML = '';
+            sections.forEach((name, i) => {
+                const item = document.createElement('div');
+                item.id = `section-${i}`;
+                item.className = 'flex items-center gap-3 p-3 bg-slate-50 rounded-lg text-sm text-slate-500';
+                item.innerHTML = `<span class="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-xs">⏸</span><span>${i + 1}. ${name}</span>`;
+                sectionList.appendChild(item);
+            });
+
+            // REAL PROGRESS POLLING
+            let progress = 0;
+            currentProgressInterval = setInterval(async () => {
+                try {
+                    const progRes = await fetch(`${API_BASE_URL}/progress/${requestId}`);
+                    if (progRes.ok) {
+                        const data = await progRes.json();
+                        if (data.status !== "unknown") {
+                            // Update UI
+                            updateProgress(data.percent, sections);
+                            // Update Message
+                            if (data.message) {
+                                btn.innerHTML = `<svg class="w-5 h-5 spinner" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> ${data.message}`;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error("Progress poll error:", e);
+                }
+            }, 1000);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/generate-document`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        org_id: orgId,
+                        document_type: selectedDocType,
+                        year: parseInt(year),
+                        lang,
+                        request_id: requestId // Send ID
+                    }),
+                    signal: currentAbortController.signal
+                });
+
+                clearInterval(currentProgressInterval);
+                if (!response.ok) throw new Error((await response.json()).detail || 'Generation failed');
+
+                const result = await response.json();
+                generatedDocument = result.document;
+                generatedMetadata = result.metadata;
+
+                updateProgress(100, sections);
+                setTimeout(() => showDocument(result), 400);
+
+            } catch (error) {
+                clearInterval(currentProgressInterval);
+                if (error.name === 'AbortError') {
+                    showToast('⛔ Generation stopped');
+                } else {
+                    showToast(`❌ Error: ${error.message}`);
+                }
+                resetUI();
+            }
+        }
+
+        function updateProgress(percent, sections) {
+            document.getElementById('progress-fill').style.width = `${percent}%`;
+            document.getElementById('progress-percent').textContent = `${Math.round(percent)}%`;
+            const completedCount = Math.floor((percent / 100) * sections.length);
+
+            sections.forEach((_, i) => {
+                const item = document.getElementById(`section-${i}`);
+                const icon = item.querySelector('span:first-child');
+                if (i < completedCount) {
+                    item.className = 'flex items-center gap-3 p-3 bg-brand-50 border border-brand-200 rounded-lg text-sm text-brand-700';
+                    icon.className = 'w-5 h-5 rounded-full bg-brand-500 text-white flex items-center justify-center text-xs';
+                    icon.innerHTML = '✓';
+                } else if (i === completedCount && percent < 100) {
+                    item.className = 'flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700';
+                    icon.className = 'w-5 h-5 rounded-full border-2 border-blue-500 border-t-transparent spinner flex items-center justify-center';
+                    icon.innerHTML = '';
+                }
+            });
+
+            document.getElementById('progress-text').textContent = percent < 100
+                ? `${i18n[currentLang].processingSection} ${completedCount + 1} ${i18n[currentLang].of} ${sections.length}...`
+                : i18n[currentLang].complete;
+        }
+
+        function showDocument(result) {
+            document.getElementById('progress-section').classList.add('hidden');
+            document.getElementById('document-preview').classList.remove('hidden');
+            document.getElementById('output-actions').classList.remove('hidden');
+            document.getElementById('metadata-bar').classList.remove('hidden');
+
+            document.getElementById('document-content').innerHTML = marked.parse(result.document);
+            document.getElementById('meta-org').textContent = result.metadata.org_id;
+            document.getElementById('meta-type').textContent = result.metadata.document_name;
+            document.getElementById('meta-sections').textContent = result.metadata.sections_count;
+            document.getElementById('meta-chars').textContent = result.metadata.character_count.toLocaleString();
+
+            if (result.metadata.token_usage) {
+                document.getElementById('meta-tokens-container').classList.remove('hidden');
+                document.getElementById('meta-tokens').textContent = result.metadata.token_usage.total_tokens.toLocaleString();
+                if (result.metadata.token_usage.estimated_cost_usd) {
+                    document.getElementById('meta-cost-container').classList.remove('hidden');
+                    document.getElementById('meta-cost').textContent = `$${result.metadata.token_usage.estimated_cost_usd.toFixed(4)}`;
+                }
+            }
+
+            document.getElementById('output-title').textContent = `${result.metadata.document_name} ${result.metadata.year}`;
+
+            const btn = document.getElementById('generate-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const t = i18n[currentLang];
+            btn.disabled = false;
+            btn.innerHTML = `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> <span data-i18n="btnGenerate">${t.btnGenerate}</span>`;
+            stopBtn.classList.add('hidden');
+
+            showToast(t.successMsg);
+        }
+
+        function resetUI() {
+            document.getElementById('progress-section').classList.add('hidden');
+            document.getElementById('empty-state').classList.remove('hidden');
+            const btn = document.getElementById('generate-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const t = i18n[currentLang];
+            btn.disabled = false;
+            btn.innerHTML = `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> <span data-i18n="btnGenerate">${t.btnGenerate}</span>`;
+            stopBtn.classList.add('hidden');
+        }
+
+        function stopGeneration() {
+            if (currentAbortController) {
+                currentAbortController.abort();
+                currentAbortController = null;
+            }
+            if (currentProgressInterval) {
+                clearInterval(currentProgressInterval);
+                currentProgressInterval = null;
+            }
+        }
+
+        function downloadDocument() {
+            if (!generatedDocument || !generatedMetadata) return;
+            const filename = `${generatedMetadata.org_id}_${generatedMetadata.document_type}_${generatedMetadata.year}.md`;
+            const blob = new Blob([generatedDocument], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`📥 Downloaded: ${filename}`);
+        }
+
+        function copyToClipboard() {
+            if (!generatedDocument) return;
+            navigator.clipboard.writeText(generatedDocument).then(() => showToast('📋 Copied to clipboard!')).catch(() => showToast('❌ Failed to copy'));
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        // --- HECO Results Polar Chart ---
+        let hecoChartInstance = null;
+
+        async function loadHecoResults() {
+            const orgId = document.getElementById('org-selector').value;
+            if (!orgId) {
+                showToast('⚠️ Please select an organization');
+                return;
+            }
+
+            // Show loading state
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('document-preview').classList.add('hidden');
+            document.getElementById('polar-chart-section').classList.remove('hidden');
+            document.getElementById('output-actions').classList.add('hidden');
+            document.getElementById('metadata-bar').classList.add('hidden');
+            document.getElementById('heco-stats').innerHTML = '<span class="text-slate-400">Loading...</span>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/heco-results/${orgId}`);
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Failed to load HECO results');
+                }
+                const data = await response.json();
+                renderPolarChart(data);
+                showToast('✅ HECO Results loaded!');
+            } catch (error) {
+                console.error('HECO Results Error:', error);
+                showToast(`❌ ${error.message}`);
+                document.getElementById('heco-stats').innerHTML = `<span class="text-red-500">${error.message}</span>`;
+            }
+        }
+
+        function renderPolarChart(data) {
+            const ctx = document.getElementById('heco-polar-chart').getContext('2d');
+
+            // Destroy existing chart if any
+            if (hecoChartInstance) {
+                hecoChartInstance.destroy();
+            }
+
+            // Prepare data - smart label formatting based on word count
+            const labels = data.domains.map(d => {
+                const parts = d.domain.split(': ');
+                const domainNum = parts[0]; // "D1"
+                const domainName = parts[1] || ''; // "Gobernanza y Liderazgo"
+                const words = domainName.split(' ');
+
+                // Smart word wrapping:
+                // 2 words: one word per line
+                // 3+ words: first two on line 1, rest on line 2
+                let lines = [domainNum];
+                if (words.length <= 2) {
+                    // 2 words: ["D1", "Word1", "Word2", "(score)"]
+                    lines = lines.concat(words);
+                } else {
+                    // 3+ words: ["D1", "Word1 Word2", "Word3...", "(score)"]
+                    lines.push(words.slice(0, 2).join(' '));
+                    lines.push(words.slice(2).join(' '));
+                }
+                lines.push(`(${d.average})`);
+                return lines;
+            });
+            const values = data.domains.map(d => d.average);
+            const colors = data.domains.map(d => d.color);
+
+            // White center plugin
+            const whiteCenterPlugin = {
+                id: 'whiteCenter',
+                afterDraw: (chart) => {
+                    const ctx2 = chart.ctx;
+                    const rScale = chart.scales.r;
+                    if (rScale && rScale.drawingArea > 0) {
+                        const centerX = rScale.xCenter;
+                        const centerY = rScale.yCenter;
+                        const valueToCover = 0.3;
+                        const scaleRange = rScale.max - rScale.min;
+                        if (scaleRange > 0) {
+                            const valueFraction = (valueToCover - rScale.min) / scaleRange;
+                            const radius = rScale.drawingArea * valueFraction;
+                            if (radius > 0) {
+                                ctx2.save();
+                                ctx2.beginPath();
+                                ctx2.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                                ctx2.fillStyle = '#FFFFFF';
+                                ctx2.fill();
+                                ctx2.restore();
+                            }
+                        }
+                    }
+                }
+            };
+
+            hecoChartInstance = new Chart(ctx, {
+                type: 'polarArea',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Puntaje Promedio',
+                        data: values,
+                        backgroundColor: colors,
+                    }]
+                },
+                plugins: [whiteCenterPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Resultados HECO v2 - ${data.org_id}`,
+                            font: { size: 18, weight: 'bold' },
+                            padding: { top: 10, bottom: 20 },
+                            color: '#1e293b'
+                        },
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return `Puntaje: ${context.parsed.r.toFixed(2)} / ${data.max_score}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: data.max_score,
+                            grid: {
+                                lineWidth: 2,
+                                color: '#FFFFFF',
+                                z: 1
+                            },
+                            pointLabels: {
+                                display: true,
+                                centerPointLabels: true,
+                                font: { size: 13, weight: '500' },
+                                padding: 5
+                            },
+                            ticks: {
+                                display: false
+                            }
+                        }
+                    },
+                    elements: {
+                        arc: {
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        }
+                    }
+                }
+            });
+
+            // Render stats only (no legend)
+            document.getElementById('heco-stats').innerHTML = `
+                <span>${data.total_responses} encuestas analizadas</span>
+                <span class="mx-2">•</span>
+                <span>Escala: 0-${data.max_score}</span>
+            `;
+        }
+
+        function downloadPolarChart() {
+            if (!hecoChartInstance) {
+                showToast('❌ No chart to download');
+                return;
+            }
+            const canvas = hecoChartInstance.canvas;
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const ctx = tempCanvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            ctx.drawImage(canvas, 0, 0);
+
+            const link = document.createElement('a');
+            link.href = tempCanvas.toDataURL('image/png');
+            const orgId = document.getElementById('org-selector').value || 'org';
+            link.download = `heco_results_${orgId}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('📥 Chart downloaded!');
+        }
+    </script>
+</body>
+
+</html>
